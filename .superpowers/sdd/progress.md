@@ -4,5 +4,5 @@
 - [x] Task 2: DB Seeding (commits 86875a2..4107bf8, review clean)
 - [x] Task 3: Vendor CRUD (commits 4107bf8..3a437ed, review clean)
 - [x] Task 4: Settings & Estimator (commits 3a437ed..4009b07, review clean)
-- [x] Task 5: Quotation Editor & API
-- [ ] Task 6: Dashboard & Print CSS
+- [x] Task 5: Quotation Editor & API (commits 4009b07..bd79e3e, review clean)
+- [x] Task 6: Dashboard & Print CSS (commits bd79e3e..3bfa2f7, review clean)
