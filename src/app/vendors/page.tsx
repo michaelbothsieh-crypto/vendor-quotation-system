@@ -3,6 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+interface Quotation {
+  id: string;
+  quotationNumber: string;
+  title: string;
+  status: string;
+  createdAt: string;
+}
+
 interface Vendor {
   id: string;
   name: string;
@@ -13,6 +21,7 @@ interface Vendor {
   address: string | null;
   createdAt: string;
   updatedAt: string;
+  quotations?: Quotation[];
 }
 
 export default function VendorsPage() {
@@ -116,6 +125,33 @@ export default function VendorsPage() {
       if (editingId === id) {
         resetForm();
       }
+      fetchVendors();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  // 刪除報價單
+  const handleDeleteQuotation = async (id: string, quotationNumber: string) => {
+    if (
+      !window.confirm(
+        `確定要刪除報價單「${quotationNumber}」嗎？此動作將無法還原！`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/quotations/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "刪除報價單失敗");
+      }
+
+      setSuccessMessage(`已成功刪除報價單「${quotationNumber}」`);
       fetchVendors();
     } catch (err: any) {
       alert(err.message);
@@ -368,6 +404,72 @@ export default function VendorsPage() {
                             </span>
                             <span className="line-clamp-2">{vendor.address}</span>
                           </div>
+                        )}
+                      </div>
+
+                      {/* 報價單列表 */}
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                            <svg className="h-4 w-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            專案報價單 ({vendor.quotations?.length || 0})
+                          </span>
+                          <Link
+                            href={`/quotations/new?vendorId=${vendor.id}`}
+                            className="text-xxs font-bold text-indigo-600 hover:text-indigo-850 flex items-center gap-0.5"
+                          >
+                            + 新增報價單
+                          </Link>
+                        </div>
+                        {vendor.quotations && vendor.quotations.length > 0 ? (
+                          <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                            {vendor.quotations.map((q) => (
+                              <div
+                                key={q.id}
+                                className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors gap-2"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                    <span className="inline-block px-1.5 py-0.5 text-xxs font-semibold bg-indigo-50 text-indigo-700 rounded border border-indigo-100/50">
+                                      {q.quotationNumber}
+                                    </span>
+                                    <span className="text-xxs text-slate-400">
+                                      {new Date(q.createdAt).toLocaleDateString("zh-TW")}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs font-semibold text-slate-700 truncate">
+                                    {q.title}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <Link
+                                    href={`/quotations/${q.id}/edit`}
+                                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded border border-transparent hover:border-slate-100 transition-all"
+                                    title="編輯報價單"
+                                  >
+                                    <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                    </svg>
+                                  </Link>
+                                  <button
+                                    onClick={() => handleDeleteQuotation(q.id, q.quotationNumber)}
+                                    className="p-1 text-slate-400 hover:text-rose-600 hover:bg-white rounded border border-transparent hover:border-slate-100 transition-all"
+                                    title="刪除報價單"
+                                  >
+                                    <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xxs text-slate-400 text-center py-2 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                            目前無此廠商的報價單
+                          </p>
                         )}
                       </div>
                     </div>

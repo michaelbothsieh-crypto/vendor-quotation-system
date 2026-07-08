@@ -7,6 +7,13 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET() {
   try {
     const vendors = await db.vendor.findMany({
+      include: {
+        quotations: {
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },
