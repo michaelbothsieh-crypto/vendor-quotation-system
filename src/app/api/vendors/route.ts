@@ -1,5 +1,8 @@
+export const dynamic = "force-dynamic";
+
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
+
 
 export async function GET() {
   try {
@@ -28,6 +31,10 @@ export async function POST(req: NextRequest) {
         { error: "名稱、聯絡人與聯絡信箱為必填欄位" },
         { status: 400 }
       );
+    }
+
+    if (taxId && !/^\d{8}$/.test(taxId)) {
+      return NextResponse.json({ error: "統一編號格式不正確，應為 8 位數純數字" }, { status: 400 });
     }
 
     const newVendor = await db.vendor.create({

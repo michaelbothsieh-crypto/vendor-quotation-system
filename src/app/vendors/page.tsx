@@ -135,6 +135,12 @@ export default function VendorsPage() {
       return;
     }
 
+    if (taxId.trim() && !/^\d{8}$/.test(taxId.trim())) {
+      setSubmitError("統一編號格式不正確，應為 8 位數純數字");
+      setIsSubmitting(false);
+      return;
+    }
+
     const payload = {
       name: name.trim(),
       taxId: taxId.trim() || null,

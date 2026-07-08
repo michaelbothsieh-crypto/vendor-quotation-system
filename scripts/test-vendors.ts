@@ -62,6 +62,28 @@ async function runTests() {
     const badPostData = await badPostRes.json();
     console.log(`   ✅ 成功攔截錯誤：${badPostData.error}`);
 
+    // 2b. 測試 POST 新增廠商 - 失敗案例 (統編格式不正確)
+    console.log("📝 2b. 測試統一編號格式驗證 (POST /api/vendors 統編格式錯誤)...");
+    const badTaxIdRes = await fetch(`${BASE_URL}/api/vendors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: `測試錯誤統編_${timestamp}`,
+        taxId: "12345", // 不符合 8 位數字
+        contactName: "錯誤統編專員",
+        contactEmail: "bad-taxid@example.com",
+      }),
+    });
+
+    if (badTaxIdRes.status !== 400) {
+      throw new Error(`統編格式驗證失敗：預期狀態碼 400，實際為 ${badTaxIdRes.status}`);
+    }
+    const badTaxIdData = await badTaxIdRes.json();
+    if (badTaxIdData.error !== "統一編號格式不正確，應為 8 位數純數字") {
+      throw new Error(`統編格式驗證失敗：預期錯誤訊息「統一編號格式不正確，應為 8 位數純數字」，實際為「${badTaxIdData.error}」`);
+    }
+    console.log(`   ✅ 成功攔截統編格式錯誤：${badTaxIdData.error}`);
+
     // 3. 測試 GET 取得所有廠商列表
     console.log("📝 3. 測試取得廠商清單 (GET /api/vendors)...");
     const getRes = await fetch(`${BASE_URL}/api/vendors`);
