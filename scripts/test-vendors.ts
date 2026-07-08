@@ -120,6 +120,26 @@ async function runTests() {
     }
     console.log("   ✅ 廠商資料更新成功");
 
+    // 4b. 測試 PUT 更新廠商資料 - 失敗案例 (統編格式不正確)
+    console.log(`📝 4b. 測試更新廠商統編格式驗證 (PUT /api/vendors/${createdVendorId} 統編格式錯誤)...`);
+    const badPutTaxIdRes = await fetch(`${BASE_URL}/api/vendors/${createdVendorId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...updateData,
+        taxId: "12345", // 不符合 8 位數字
+      }),
+    });
+
+    if (badPutTaxIdRes.status !== 400) {
+      throw new Error(`更新廠商統編格式驗證失敗：預期狀態碼 400，實際為 ${badPutTaxIdRes.status}`);
+    }
+    const badPutTaxIdData = await badPutTaxIdRes.json();
+    if (badPutTaxIdData.error !== "統一編號格式不正確，應為 8 位數純數字") {
+      throw new Error(`更新廠商統編格式驗證失敗：預期錯誤訊息「統一編號格式不正確，應為 8 位數純數字」，實際為「${badPutTaxIdData.error}」`);
+    }
+    console.log(`   ✅ 成功攔截更新統編格式錯誤：${badPutTaxIdData.error}`);
+
     // 5. 測試 PUT 更新廠商資料 - 404 案例
     console.log("📝 5. 測試不存在廠商的更新 (PUT /api/vendors/non-exist-id)...");
     const badPutRes = await fetch(`${BASE_URL}/api/vendors/non-exist-id`, {

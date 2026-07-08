@@ -17,6 +17,13 @@ export async function PUT(
       );
     }
 
+    if (taxId && !/^\d{8}$/.test(taxId)) {
+      return NextResponse.json(
+        { error: "統一編號格式不正確，應為 8 位數純數字" },
+        { status: 400 }
+      );
+    }
+
     // 檢查廠商是否存在
     const existingVendor = await db.vendor.findUnique({
       where: { id },
