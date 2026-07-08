@@ -39,3 +39,18 @@
 - `404b450`: feat: implement print preview page with sign areas
 - `3bfa2f7`: feat: rebuild home page as quotation dashboard
 - `9299e02`: docs: add design spec, implementation plan and update progress ledger for task 6
+
+## 5. 巢狀分組渲染 Bug 修復與驗證 (Code Review 修復)
+### 5.1 修復說明
+- **問題分析**：在 `src/app/quotations/[id]/print/page.tsx` 中，大項標題與細項 items 被分開在兩個獨立且平行的 map 循環中渲染，導致畫面上所有的大項標題先堆疊在一起，隨後才出現所有細項，破壞了原本應有的分組屬性關係。
+- **解決方案**：
+  1. 將大項標題與細項的渲染邏輯合併到同一個 map 中。
+  2. 使用 React 的 `<Fragment>`（並從 React 導入 `Fragment`）作為 wrapper 綁定每個 `category`。
+  3. 第一層先渲染大項標題 `<tr>`。
+  4. 接著緊隨其下進行 `cat.items.map` 以渲染該大項底下的所有細項 `<tr>`。
+  5. 確保全域序號 `itemIndexCounter` 仍能正確累加。
+
+### 5.2 測試與驗證結果
+- **生產環境打包驗證**：
+  在專案根目錄下執行 `npm run build`。
+  結果：Next.js 編譯打包 100% 成功，無任何 TypeScript 或是 Lint 錯誤。

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, Fragment } from "react";
 import Link from "next/link";
 import { calculateQuotation, calculateItem } from "@/lib/calculator";
 
@@ -238,34 +238,34 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
               </thead>
               <tbody>
                 {quotation.categories.map((cat: any) => (
-                  <tr key={cat.id} className="border-b border-slate-200">
-                    <td colSpan={8} className="py-2 px-3 bg-indigo-50/50 font-bold text-indigo-900 print:bg-slate-100">
-                      大項：{cat.name}
-                    </td>
-                  </tr>
+                  <Fragment key={cat.id}>
+                    <tr className="border-b border-slate-200">
+                      <td colSpan={8} className="py-2 px-3 bg-indigo-50/50 font-bold text-indigo-900 print:bg-slate-100">
+                        大項：{cat.name}
+                      </td>
+                    </tr>
+                    {cat.items.map((item: any) => {
+                      itemIndexCounter++;
+                      const calculatedItem = calculateItem(item, rates);
+                      return (
+                        <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/50">
+                          <td className="py-2 px-3 text-slate-500 text-center font-mono text-xs">{itemIndexCounter}</td>
+                          <td className="py-2 px-3 text-slate-900 font-medium">{item.description}</td>
+                          <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.rdDays) || 0}</td>
+                          <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.pmDays) || 0}</td>
+                          <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.qcDays) || 0}</td>
+                          <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.integrationDays) || 0}</td>
+                          <td className="py-2 px-3 text-slate-900 text-right font-mono font-semibold">
+                            ${calculatedItem.amount.toLocaleString()}
+                          </td>
+                          <td className="py-2 px-3 text-slate-500 text-xs truncate max-w-[120px]" title={item.note || ""}>
+                            {item.note || "-"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </Fragment>
                 ))}
-                {quotation.categories.map((cat: any) =>
-                  cat.items.map((item: any) => {
-                    itemIndexCounter++;
-                    const calculatedItem = calculateItem(item, rates);
-                    return (
-                      <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                        <td className="py-2 px-3 text-slate-500 text-center font-mono text-xs">{itemIndexCounter}</td>
-                        <td className="py-2 px-3 text-slate-900 font-medium">{item.description}</td>
-                        <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.rdDays) || 0}</td>
-                        <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.pmDays) || 0}</td>
-                        <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.qcDays) || 0}</td>
-                        <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.integrationDays) || 0}</td>
-                        <td className="py-2 px-3 text-slate-900 text-right font-mono font-semibold">
-                          ${calculatedItem.amount.toLocaleString()}
-                        </td>
-                        <td className="py-2 px-3 text-slate-500 text-xs truncate max-w-[120px]" title={item.note || ""}>
-                          {item.note || "-"}
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
               </tbody>
             </table>
           </div>
