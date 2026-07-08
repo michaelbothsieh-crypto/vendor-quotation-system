@@ -61,6 +61,10 @@ async function runTests() {
   assert(quotationCalc.totalQcDays === 0.5, `QC 天數加總應為 0.5，實際為 ${quotationCalc.totalQcDays}`);
   assert(quotationCalc.totalIntegrationDays === 0.5, `Integration 天數加總應為 0.5，實際為 ${quotationCalc.totalIntegrationDays}`);
   assert(quotationCalc.totalDays === 3.5, `總天數加總應為 3.5，實際為 ${quotationCalc.totalDays}`);
+  assert(quotationCalc.totalRdAmount === 16000, `RD 金額應為 16000，實際為 ${quotationCalc.totalRdAmount}`);
+  assert(quotationCalc.totalPmAmount === 3000, `PM 金額應為 3000，實際為 ${quotationCalc.totalPmAmount}`);
+  assert(quotationCalc.totalQcAmount === 2500, `QC 金額應為 2500，實際為 ${quotationCalc.totalQcAmount}`);
+  assert(quotationCalc.totalIntegrationAmount === 3250, `Integration 金額應為 3250，實際為 ${quotationCalc.totalIntegrationAmount}`);
   assert(quotationCalc.subtotal === 24750, `未稅金額應為 24750，實際為 ${quotationCalc.subtotal}`);
   assert(quotationCalc.tax === 1238, `稅金應為 1238，實際為 ${quotationCalc.tax}`);
   assert(quotationCalc.total === 25988, `含稅總額應為 25988，實際為 ${quotationCalc.total}`);

@@ -69,11 +69,19 @@ export default function QuotationForm({ id, initialData }: QuotationFormProps) {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        // 1. 載入合作廠商列表
         const vendorsRes = await fetch("/api/vendors");
         if (vendorsRes.ok) {
           const vendorsData = await vendorsRes.json();
           setVendors(vendorsData);
+
+          // 若為新增模式且 URL 中帶有 vendorId 參數，則預設選中該廠商
+          if (!isEditMode) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryVendorId = urlParams.get("vendorId");
+            if (queryVendorId && vendorsData.some((v: any) => v.id === queryVendorId)) {
+              setVendorId(queryVendorId);
+            }
+          }
         }
 
         // 2. 如果是新增模式，載入系統設定的預設費率
@@ -476,7 +484,7 @@ export default function QuotationForm({ id, initialData }: QuotationFormProps) {
             {/* 細項表格區 */}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-550/10 text-slate-500 font-semibold text-xs uppercase tracking-wider text-left">
+                <thead className="bg-slate-500/10 text-slate-500 font-semibold text-xs uppercase tracking-wider text-left">
                   <tr className="bg-slate-50/40">
                     <th scope="col" className="px-6 py-3 min-w-[200px]">功能細項描述</th>
                     <th scope="col" className="px-3 py-3 w-[90px] text-center">RD工時 (天)</th>
@@ -597,19 +605,27 @@ export default function QuotationForm({ id, initialData }: QuotationFormProps) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
             <div className="bg-slate-800/50 p-3.5 rounded-2xl border border-slate-800">
               <span className="block text-xs text-slate-500 font-semibold mb-1">RD 總工時</span>
-              <span className="text-base font-bold text-white">{totals.totalRdDays} 天</span>
+              <span className="text-base font-bold text-white">
+                {totals.totalRdDays} 天 <span className="text-xs text-slate-400 font-normal">(NT$ {totals.totalRdAmount.toLocaleString()})</span>
+              </span>
             </div>
             <div className="bg-slate-800/50 p-3.5 rounded-2xl border border-slate-800">
               <span className="block text-xs text-slate-500 font-semibold mb-1">PM 總工時</span>
-              <span className="text-base font-bold text-white">{totals.totalPmDays} 天</span>
+              <span className="text-base font-bold text-white">
+                {totals.totalPmDays} 天 <span className="text-xs text-slate-400 font-normal">(NT$ {totals.totalPmAmount.toLocaleString()})</span>
+              </span>
             </div>
             <div className="bg-slate-800/50 p-3.5 rounded-2xl border border-slate-800">
               <span className="block text-xs text-slate-500 font-semibold mb-1">QC 總工時</span>
-              <span className="text-base font-bold text-white">{totals.totalQcDays} 天</span>
+              <span className="text-base font-bold text-white">
+                {totals.totalQcDays} 天 <span className="text-xs text-slate-400 font-normal">(NT$ {totals.totalQcAmount.toLocaleString()})</span>
+              </span>
             </div>
             <div className="bg-slate-800/50 p-3.5 rounded-2xl border border-slate-800">
               <span className="block text-xs text-slate-500 font-semibold mb-1">整合總工時</span>
-              <span className="text-base font-bold text-white">{totals.totalIntegrationDays} 天</span>
+              <span className="text-base font-bold text-white">
+                {totals.totalIntegrationDays} 天 <span className="text-xs text-slate-400 font-normal">(NT$ {totals.totalIntegrationAmount.toLocaleString()})</span>
+              </span>
             </div>
           </div>
         </div>

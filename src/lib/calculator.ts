@@ -96,6 +96,16 @@ export function calculateQuotation(items: ItemInput[], rates: Rates, taxRate = 0
   const totalIntegrationDays = totalIntegrationInt / 10;
   const totalDays = (totalRdInt + totalPmInt + totalQcInt + totalIntegrationInt) / 10;
 
+  const rdRate = rates.rdRate ?? rates.DEFAULT_RD_RATE ?? 0;
+  const pmRate = rates.pmRate ?? rates.DEFAULT_PM_RATE ?? 0;
+  const qcRate = rates.qcRate ?? rates.DEFAULT_QC_RATE ?? 0;
+  const integrationRate = rates.integrationRate ?? rates.DEFAULT_INTEGRATION_RATE ?? 0;
+
+  const totalRdAmount = Math.round(totalRdDays * rdRate);
+  const totalPmAmount = Math.round(totalPmDays * pmRate);
+  const totalQcAmount = Math.round(totalQcDays * qcRate);
+  const totalIntegrationAmount = Math.round(totalIntegrationDays * integrationRate);
+
   const tax = Math.round(subtotal * taxRate);
   const total = subtotal + tax;
 
@@ -105,6 +115,10 @@ export function calculateQuotation(items: ItemInput[], rates: Rates, taxRate = 0
     totalQcDays: roundToOneDecimal(totalQcDays),
     totalIntegrationDays: roundToOneDecimal(totalIntegrationDays),
     totalDays: roundToOneDecimal(totalDays),
+    totalRdAmount,
+    totalPmAmount,
+    totalQcAmount,
+    totalIntegrationAmount,
     subtotal,
     tax,
     total,
