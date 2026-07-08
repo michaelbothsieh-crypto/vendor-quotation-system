@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Vendor {
@@ -25,7 +26,7 @@ model Quotation {
   title           String
   vendorId        String
   vendor          Vendor              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  status          String              @default("DRAFT") // DRAFT, SENT, ACCEPTED
+  status          String              @default("DRAFT") // 狀態：草稿 (DRAFT), 已寄出 (SENT), 已核准 (APPROVED)
   taxRate         Float               @default(0.05)
   rdRate          Int                 @default(8000)
   pmRate          Int                 @default(6000)
@@ -50,10 +51,10 @@ model QuotationItem {
   categoryId      String
   category        QuotationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   description     String
-  rdDays          Float             @default(0.0)
-  pmDays          Float             @default(0.0)
-  qcDays          Float             @default(0.0)
-  integrationDays Float             @default(0.0)
+  rdDays          Decimal           @default(0.0) @db.Decimal(10, 1)
+  pmDays          Decimal           @default(0.0) @db.Decimal(10, 1)
+  qcDays          Decimal           @default(0.0) @db.Decimal(10, 1)
+  integrationDays Decimal           @default(0.0) @db.Decimal(10, 1)
   note            String?
   sortOrder       Int               @default(0)
 }

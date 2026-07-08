@@ -39,3 +39,37 @@
 
 ## 疑慮與關注點 (Issues or Concerns)
 - 無。
+
+## Task 1 修復進度與測試結果 (Task 1 Fixes & Verification)
+
+### 1. 修改內容 (Fix Details)
+- **回歸標準 Prisma PostgreSQL 連線**：移除了 `prisma.config.ts`，並在 `prisma/schema.prisma` 的 `datasource db` 中還原了 `url = env("DATABASE_URL")`。
+- **高精度 Decimal 欄位**：將 `QuotationItem` 的四個工時欄位（`rdDays`, `pmDays`, `qcDays`, `integrationDays`）由 `Float` 修改為 `Decimal`，並指定資料庫欄位類型為 `@db.Decimal(10, 1)`。
+- **註解中文化**：將 `Quotation.status` 的英文註解修復為繁體中文：`// 狀態：草稿 (DRAFT), 已寄出 (SENT), 已核准 (APPROVED)`。
+- **移除多餘 Adapter 與防範洩漏**：
+  - 完全移除 `pg` 與 `@prisma/adapter-pg` 的 adapter 引用。
+  - 將 `src/lib/db.ts` 還原為 Next.js 標準的 `globalThis` 單例模式，避免連線洩漏風險。
+- **依賴清理**：
+  - 降級 Prisma 至 `6.19.3` (透過 package.json 指定 `^6.4.0`) 以原生支援 `url` 屬性。
+  - 自 `package.json` 的 `dependencies` 與 `devDependencies` 中完全移除 `pg`、`@prisma/adapter-pg` 及 `@types/pg`，並完成 `npm install`。
+- **獨立腳本補強**：在 `scripts/test-connection.ts` 頂部加入 `import "dotenv/config";`，確保腳本能獨立載入環境變數並成功連線。
+
+### 2. 驗證步驟與結果 (Verification Steps & Results)
+- **依賴清理與安裝**：執行 `npm install` 成功，移除了不必要套件，並降級 Prisma 到 6.x。
+- **資料庫容器確認**：執行 `docker compose up -d`，確認容器 `quotation-db` 正常運行中。
+- **資料庫 Migration 同步**：
+  - 執行 `npx prisma migrate dev --name adjust_types_to_decimal`
+  - 順利建立並套用 Migration，成功將欄位調整為 `Decimal(10, 1)`。
+- **連線測試驗證**：
+  - 執行 `npx tsx scripts/test-connection.ts`
+  - 輸出結果：`資料庫連線測試成功！`
+
+### 3. 修改檔案列表 (Updated Files Changed)
+- **修改**：
+  - `prisma/schema.prisma`
+  - `src/lib/db.ts`
+  - `package.json`
+  - `package-lock.json`
+  - `scripts/test-connection.ts`
+- **刪除**：
+  - `prisma.config.ts`
