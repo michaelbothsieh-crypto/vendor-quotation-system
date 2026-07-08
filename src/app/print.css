@@ -1,0 +1,49 @@
+@media print {
+  /* 隱藏非列印元素 */
+  .no-print {
+    display: none !important;
+  }
+
+  /* 頁面邊距設定 */
+  @page {
+    size: A4;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 防止表格列跨頁截斷 */
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* 表格樣式優化 */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 6px 8px !important;
+    text-align: left;
+  }
+
+  /* 輸入框/表單控件純文字化 */
+  input, select, textarea {
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+    appearance: none !important;
+  }
+}
