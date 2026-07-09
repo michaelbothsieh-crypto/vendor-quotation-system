@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'node:crypto';
 
 const prisma = new PrismaClient();
 
@@ -12,20 +13,30 @@ const DEFAULT_ROLES = [
 ];
 
 async function main() {
-  // 建立預設管理員帳號（僅在無使用者時建立）
+  // 建立預設管理員帳號（僅在無使用者時建立）。
+  // 密碼一律來自環境變數 ADMIN_INITIAL_PASSWORD，不寫死在程式碼中（repo 可安全公開）；
+  // 未設定時產生一組隨機密碼並印在部署 log（僅部署者可見）。
   console.log('檢查是否需要建立預設管理員帳號...');
   const userCount = await prisma.user.count();
   if (userCount === 0) {
-    const passwordHash = await bcrypt.hash('REDACTED', 10);
+    const email = process.env.ADMIN_INITIAL_EMAIL || 'admin@example.com';
+    const envPassword = process.env.ADMIN_INITIAL_PASSWORD;
+    const password = envPassword || randomBytes(12).toString('base64url');
+    const passwordHash = await bcrypt.hash(password, 10);
     const admin = await prisma.user.create({
       data: {
-        email: 'admin@example.com',
+        email,
         passwordHash,
         name: '系統管理員',
         role: 'ADMIN',
       },
     });
-    console.log(`已建立預設管理員帳號: ${admin.email} / 密碼: REDACTED（請登入後立即修改）`);
+    if (envPassword) {
+      console.log(`已建立預設管理員帳號: ${admin.email}（密碼取自 ADMIN_INITIAL_PASSWORD，請登入後立即修改）`);
+    } else {
+      console.log(`已建立預設管理員帳號: ${admin.email} / 隨機密碼: ${password}`);
+      console.log('（未設定 ADMIN_INITIAL_PASSWORD，以上隨機密碼僅顯示這一次，請立即登入並修改）');
+    }
   } else {
     console.log('已存在使用者帳號，略過預設管理員建立。');
   }

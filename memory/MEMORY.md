@@ -1,0 +1,2 @@
+- [Skip deploy verification](feedback_skip_deploy_verification.md) — just push after committing, don't poll `vercel ls` or curl prod to verify
+- [Always push](feedback_always_push.md) — push immediately after every commit in this repo, don't wait to be asked

@@ -51,8 +51,8 @@ async function main() {
   await page.screenshot({ path: path.join(outputDir, "login.png") });
 
   console.log("正在登入系統...");
-  await page.fill('input[type="email"]', "admin@example.com");
-  await page.fill('input[type="password"]', "REDACTED");
+  await page.fill('input[type="email"]', process.env.ADMIN_INITIAL_EMAIL || "admin@example.com");
+  await page.fill('input[type="password"]', process.env.ADMIN_INITIAL_PASSWORD || "");
   await page.click('button[type="submit"]');
   await page.waitForURL("http://localhost:3000/", { timeout: 15000 });
   await delay(500);
