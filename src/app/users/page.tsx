@@ -133,18 +133,10 @@ export default function UsersPage() {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
 
-      <header className="sticky top-0 z-30 bg-white border-b border-slate-200/60 px-4 sm:px-6 lg:px-8 py-6">
-        <div className="max-w-5xl mx-auto w-full flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold text-slate-900">人員管理</h1>
-            <p className="text-slate-500 text-sm mt-1">管理可登入系統的帳號與權限</p>
-          </div>
-          <Link
-            href="/"
-            className="inline-flex items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50"
-          >
-            返回首頁
-          </Link>
+      <header className="bg-white border-b border-slate-200/60 px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-5xl mx-auto w-full">
+          <h1 className="text-2xl font-extrabold text-slate-900">人員管理</h1>
+          <p className="text-slate-500 text-sm mt-1">管理可登入系統的帳號與權限</p>
         </div>
       </header>
 

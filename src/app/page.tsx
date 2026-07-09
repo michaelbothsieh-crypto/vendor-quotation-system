@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
 import { calculateQuotation } from "@/lib/calculator";
-import { signOut, useSession } from "next-auth/react";
-import { canCreate, canEdit } from "@/lib/permissions";
+import { useSession } from "next-auth/react";
+import { canEdit } from "@/lib/permissions";
 
 interface Vendor {
   id: string;
@@ -48,7 +48,6 @@ interface HistoryQuotation {
 export default function DashboardPage() {
   const { data: session } = useSession();
   const role = (session?.user as any)?.role;
-  const allowCreate = canCreate(role);
   const allowEdit = canEdit(role);
 
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -197,65 +196,17 @@ export default function DashboardPage() {
       {/* 頂部裝飾條 */}
       <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
 
-      {/* 頂部導覽：sticky，捲動時保留在畫面上，只有下方內容區塊會捲動 */}
-      <header className="sticky top-0 z-30 bg-white border-b border-slate-200/60 px-4 sm:px-6 lg:px-8 py-6">
-        <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold tracking-wide mb-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
-              外包廠商報價管理系統
-            </span>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-50 dark:via-indigo-200 dark:to-slate-50 bg-clip-text text-transparent">
-              報價單與供應商儀表板
-            </h1>
-            <p className="text-slate-500 text-sm mt-1.5 leading-relaxed">
-              檢視歷史報價單紀錄，快速檢索估算明細，並進行格式化輸出。
-            </p>
-          </div>
-
-          {/* 快速導覽按鈕 */}
-          <div className="flex flex-wrap items-center gap-3">
-            {allowCreate && (
-            <Link
-              href="/quotations/new"
-              className="inline-flex justify-center items-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-500 active:scale-[0.98] transition-all hover:shadow-lg"
-            >
-              + 建立新報價單
-            </Link>
-            )}
-            <Link
-              href="/vendors"
-              className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
-            >
-              廠商管理
-            </Link>
-            <Link
-              href="/settings"
-              className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
-            >
-              費率設定
-            </Link>
-            <Link
-              href="/database"
-              className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-500 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
-            >
-              🗄️ 資料庫
-            </Link>
-            <Link
-              href="/users"
-              className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
-            >
-              人員管理
-            </Link>
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-500 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
-            >
-              登出
-            </button>
-          </div>
+      {/* 頁面標題（導覽按鈕已搬到全域固定的 AppHeader，切換頁面時不會消失） */}
+      <div className="bg-white border-b border-slate-200/60 px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto w-full">
+          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-50 dark:via-indigo-200 dark:to-slate-50 bg-clip-text text-transparent">
+            報價單與供應商儀表板
+          </h1>
+          <p className="text-slate-500 text-sm mt-1.5 leading-relaxed">
+            檢視歷史報價單紀錄，快速檢索估算明細，並進行格式化輸出。
+          </p>
         </div>
-      </header>
+      </div>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
 

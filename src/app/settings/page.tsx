@@ -114,23 +114,13 @@ export default function SettingsPage() {
       {/* 頂部裝飾條與導覽 */}
       <div className="h-1.5 w-full bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600"></div>
 
-      <header className="sticky top-0 z-30 bg-white border-b border-slate-200 py-5 px-6 sm:px-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-50 dark:via-indigo-200 dark:to-slate-50 bg-clip-text text-transparent">
-            系統費率設定
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            設定報價系統中各開發角色（RD、PM、QC、整合）的預設人天費率 (TWD)
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-all hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-          >
-            ← 返回首頁
-          </Link>
-        </div>
+      <header className="bg-white border-b border-slate-200 py-5 px-6 sm:px-12">
+        <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-50 dark:via-indigo-200 dark:to-slate-50 bg-clip-text text-transparent">
+          系統費率設定
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          設定報價系統中各開發角色（RD、PM、QC、整合）的預設人天費率 (TWD)
+        </p>
       </header>
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12 flex flex-col items-center">

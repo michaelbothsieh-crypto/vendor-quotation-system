@@ -4,6 +4,7 @@ import "./globals.css";
 import "./print.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import Providers from "@/components/Providers";
+import AppHeader from "@/components/AppHeader";
 
 const THEME_INIT_SCRIPT = `
 (function () {
@@ -45,6 +46,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Providers>
+          <AppHeader />
           {children}
           <ThemeToggle />
         </Providers>
