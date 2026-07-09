@@ -2,12 +2,13 @@ export const dynamic = "force-dynamic";
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { isAdmin, ROLES } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 
 async function requireAdmin() {
   const session = await auth();
-  return (session?.user as any)?.role === "ADMIN";
+  return isAdmin((session?.user as any)?.role);
 }
 
 export async function GET() {
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await db.user.create({
-      data: { email, passwordHash, name, role: role === "ADMIN" ? "ADMIN" : "USER" },
+      data: { email, passwordHash, name, role: ROLES.includes(role) ? role : "VIEWER" },
       select: { id: true, email: true, name: true, role: true, createdAt: true, updatedAt: true },
     });
     return NextResponse.json(user, { status: 201 });

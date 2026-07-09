@@ -35,51 +35,95 @@ body {
   color: var(--foreground);
 }
 
+/* 表面（卡片/頁面底色） */
 .dark .bg-white { background-color: #151b2b; }
-.dark .bg-slate-50 { background-color: #0f1420; }
-.dark .bg-slate-50\/50 { background-color: rgb(15 20 32 / 0.5); }
+.dark .bg-slate-50,
+.dark .bg-slate-100 { background-color: #0f1420; }
 .dark .bg-slate-50\/30 { background-color: rgb(15 20 32 / 0.3); }
-.dark .bg-indigo-50 { background-color: rgb(99 102 241 / 0.12); }
-.dark .bg-indigo-100 { background-color: rgb(99 102 241 / 0.18); }
-.dark .bg-indigo-50\/30 { background-color: rgb(99 102 241 / 0.08); }
-.dark .bg-red-50 { background-color: rgb(244 63 94 / 0.1); }
-.dark .bg-red-100 { background-color: rgb(244 63 94 / 0.16); }
-.dark .bg-rose-50 { background-color: rgb(244 63 94 / 0.1); }
-.dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.12); }
-.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.12); }
-.dark .bg-violet-100 { background-color: rgb(139 92 246 / 0.18); }
+.dark .bg-slate-50\/40 { background-color: rgb(15 20 32 / 0.4); }
+.dark .bg-slate-50\/50 { background-color: rgb(15 20 32 / 0.5); }
+.dark .bg-slate-50\/80 { background-color: rgb(15 20 32 / 0.8); }
+.dark .bg-slate-200 { background-color: #1e293b; }
+.dark .bg-gradient-to-r.from-indigo-50.to-purple-50 {
+  background-image: linear-gradient(to right, rgb(49 46 129 / 0.4), rgb(88 28 135 / 0.4));
+}
 
-.dark .text-slate-900 { color: #f1f5f9; }
+/* 彩色淺底徽章（bg-{color}-50/100 系列）→ 深底半透明同色調 */
+.dark .bg-indigo-50 { background-color: rgb(99 102 241 / 0.14); }
+.dark .bg-indigo-50\/30 { background-color: rgb(99 102 241 / 0.08); }
+.dark .bg-indigo-50\/50 { background-color: rgb(99 102 241 / 0.1); }
+.dark .bg-indigo-100 { background-color: rgb(99 102 241 / 0.2); }
+.dark .bg-blue-50 { background-color: rgb(59 130 246 / 0.14); }
+.dark .bg-red-50 { background-color: rgb(244 63 94 / 0.12); }
+.dark .bg-red-100,
+.dark .bg-red-200 { background-color: rgb(244 63 94 / 0.2); }
+.dark .bg-rose-50 { background-color: rgb(244 63 94 / 0.12); }
+.dark .bg-rose-100 { background-color: rgb(244 63 94 / 0.2); }
+.dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.14); }
+.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.14); }
+.dark .bg-violet-100 { background-color: rgb(139 92 246 / 0.2); }
+
+/* 中性文字（slate 灰階）*/
+.dark .text-slate-900,
+.dark .text-slate-950 { color: #f1f5f9; }
 .dark .text-slate-800 { color: #e2e8f0; }
-.dark .text-slate-750 { color: #e2e8f0; }
+.dark .text-slate-750,
 .dark .text-slate-700 { color: #cbd5e1; }
-.dark .text-slate-650 { color: #cbd5e1; }
+.dark .text-slate-650,
 .dark .text-slate-600 { color: #94a3b8; }
 .dark .text-slate-500 { color: #94a3b8; }
 .dark .text-slate-400 { color: #64748b; }
-.dark .text-indigo-600 { color: #a5b4fc; }
-.dark .text-indigo-650 { color: #a5b4fc; }
-.dark .text-indigo-700 { color: #a5b4fc; }
-.dark .text-indigo-750 { color: #a5b4fc; }
+
+/* 彩色文字（品牌色/狀態色，原本設計給白底看，深底改用淡色調）*/
+.dark .text-indigo-400,
+.dark .text-indigo-500,
+.dark .text-indigo-600,
+.dark .text-indigo-650,
+.dark .text-indigo-700,
+.dark .text-indigo-750,
+.dark .text-indigo-800,
+.dark .text-indigo-850,
+.dark .text-indigo-900 { color: #a5b4fc; }
+.dark .text-blue-700 { color: #93c5fd; }
 .dark .text-red-600,
 .dark .text-red-650,
-.dark .text-red-700,
-.dark .text-rose-600 { color: #fda4af; }
+.dark .text-red-700 { color: #fda4af; }
+.dark .text-rose-400,
+.dark .text-rose-500,
+.dark .text-rose-600,
+.dark .text-rose-700 { color: #fda4af; }
 .dark .text-emerald-700 { color: #6ee7b7; }
-.dark .text-amber-700 { color: #fcd34d; }
+.dark .text-amber-700,
+.dark .text-amber-800 { color: #fcd34d; }
 .dark .text-violet-700 { color: #c4b5fd; }
 
+/* 邊框 */
 .dark .border-slate-100,
 .dark .border-slate-200,
-.dark .border-slate-300 { border-color: #1e293b; }
-.dark .border-slate-200\/80 { border-color: rgb(30 41 59 / 0.8); }
+.dark .border-slate-300,
+.dark .border-slate-450 { border-color: #1e293b; }
+.dark .border-slate-200\/50 { border-color: rgb(30 41 59 / 0.5); }
 .dark .border-slate-200\/60 { border-color: rgb(30 41 59 / 0.6); }
+.dark .border-slate-200\/80,
+.dark .border-slate-200\/85 { border-color: rgb(30 41 59 / 0.8); }
+.dark .border-slate-300\/80 { border-color: rgb(30 41 59 / 0.8); }
 .dark .border-indigo-100,
 .dark .border-indigo-100\/50,
-.dark .border-indigo-200 { border-color: rgb(99 102 241 / 0.3); }
+.dark .border-indigo-100\/60,
+.dark .border-indigo-200,
+.dark .border-indigo-200\/50 { border-color: rgb(99 102 241 / 0.3); }
+.dark .border-blue-200\/50 { border-color: rgb(59 130 246 / 0.3); }
+.dark .border-red-200,
 .dark .border-red-200\/80,
-.dark .border-rose-100 { border-color: rgb(244 63 94 / 0.3); }
+.dark .border-rose-100,
+.dark .border-rose-200 { border-color: rgb(244 63 94 / 0.3); }
+.dark .border-amber-200\/50,
+.dark .border-amber-300 { border-color: rgb(245 158 11 / 0.3); }
+.dark .border-emerald-200\/50 { border-color: rgb(16 185 129 / 0.3); }
+.dark .border-violet-200\/60 { border-color: rgb(139 92 246 / 0.3); }
 
-.dark .placeholder-slate-400::placeholder { color: #64748b; }
+.dark .placeholder-slate-400::placeholder,
+.dark .placeholder-slate-500::placeholder { color: #64748b; }
 
-.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1e293b; }
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: #1e293b; }

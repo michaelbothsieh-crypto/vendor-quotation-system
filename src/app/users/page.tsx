@@ -20,7 +20,7 @@ export default function UsersPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState("USER");
+  const [role, setRole] = useState("VIEWER");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export default function UsersPage() {
     setEmail("");
     setPassword("");
     setName("");
-    setRole("USER");
+    setRole("VIEWER");
     setSubmitError(null);
   };
 
@@ -192,8 +192,9 @@ export default function UsersPage() {
               onChange={(e) => setRole(e.target.value)}
               className="w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-sm text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10"
             >
-              <option value="USER">一般使用者</option>
-              <option value="ADMIN">管理員</option>
+              <option value="VIEWER">檢視者（僅可查看）</option>
+              <option value="EDITOR">編輯者（僅可新增）</option>
+              <option value="ADMIN">管理員（可異動/刪除）</option>
             </select>
           </div>
 
@@ -252,10 +253,12 @@ export default function UsersPage() {
                         className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
                           u.role === "ADMIN"
                             ? "bg-indigo-50 text-indigo-700 border border-indigo-200/50"
+                            : u.role === "EDITOR"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/50"
                             : "bg-slate-50 text-slate-600 border border-slate-200"
                         }`}
                       >
-                        {u.role === "ADMIN" ? "管理員" : "一般使用者"}
+                        {u.role === "ADMIN" ? "管理員（可異動）" : u.role === "EDITOR" ? "編輯者（僅可新增）" : "檢視者（僅可查看）"}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-slate-500 font-mono text-xs">

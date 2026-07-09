@@ -1,16 +1,12 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { isAdmin, ROLES } from "@/lib/permissions";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 
-async function requireAdmin() {
-  const session = await auth();
-  return session;
-}
-
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin();
-  if ((session?.user as any)?.role !== "ADMIN") {
+  const session = await auth();
+  if (!isAdmin((session?.user as any)?.role)) {
     return NextResponse.json({ error: "權限不足" }, { status: 403 });
   }
   const { id } = await params;
@@ -18,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { name, role, password } = await req.json();
     const data: any = {};
     if (name) data.name = name;
-    if (role === "ADMIN" || role === "USER") data.role = role;
+    if (ROLES.includes(role)) data.role = role;
     if (password) {
       if (password.length < 6) {
         return NextResponse.json({ error: "密碼至少需 6 個字元" }, { status: 400 });
@@ -38,8 +34,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await requireAdmin();
-  if ((session?.user as any)?.role !== "ADMIN") {
+  const session = await auth();
+  if (!isAdmin((session?.user as any)?.role)) {
     return NextResponse.json({ error: "權限不足" }, { status: 403 });
   }
   const { id } = await params;

@@ -20,7 +20,7 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       title={isDark ? "切換為亮色模式" : "切換為深色模式"}
-      className="fixed bottom-5 left-5 z-50 h-11 w-11 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:scale-105 active:scale-95 transition-transform"
+      className="fixed top-4 right-4 z-[100] flex items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-500 dark:bg-amber-400 dark:hover:bg-amber-300 pl-3 pr-4 py-2.5 shadow-xl ring-2 ring-white/40 dark:ring-black/20 text-white dark:text-slate-900 font-semibold text-sm hover:scale-105 active:scale-95 transition-all"
     >
       {isDark ? (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -31,6 +31,7 @@ export default function ThemeToggle() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
         </svg>
       )}
+      {isDark ? "淺色模式" : "深色模式"}
     </button>
   );
 }

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
 import { calculateQuotation } from "@/lib/calculator";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { canCreate, canEdit } from "@/lib/permissions";
 
 interface Vendor {
   id: string;
@@ -45,6 +46,11 @@ interface HistoryQuotation {
 }
 
 export default function DashboardPage() {
+  const { data: session } = useSession();
+  const role = (session?.user as any)?.role;
+  const allowCreate = canCreate(role);
+  const allowEdit = canEdit(role);
+
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -210,7 +216,7 @@ export default function DashboardPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
               外包廠商報價管理系統
             </span>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-50 dark:via-indigo-200 dark:to-slate-50 bg-clip-text text-transparent">
               報價單與供應商儀表板
             </h1>
             <p className="text-slate-500 text-sm mt-1.5 leading-relaxed">
@@ -220,12 +226,14 @@ export default function DashboardPage() {
 
           {/* 快速導覽按鈕 */}
           <div className="flex flex-wrap items-center gap-3">
+            {allowCreate && (
             <Link
               href="/quotations/new"
               className="inline-flex justify-center items-center rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-indigo-500 active:scale-[0.98] transition-all hover:shadow-lg"
             >
               + 建立新報價單
             </Link>
+            )}
             <Link
               href="/vendors"
               className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
@@ -408,6 +416,7 @@ export default function DashboardPage() {
                                 </svg>
                                 列印
                               </Link>
+                              {allowEdit && (
                               <Link
                                 href={`/quotations/${q.id}/edit`}
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
@@ -418,6 +427,8 @@ export default function DashboardPage() {
                                 </svg>
                                 編輯
                               </Link>
+                              )}
+                              {allowEdit && (
                               <button
                                 onClick={() => handleDelete(q.id, q.quotationNumber)}
                                 className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100"
@@ -427,6 +438,7 @@ export default function DashboardPage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </button>
+                              )}
                             </div>
                           </td>
                         </tr>

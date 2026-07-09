@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { canCreate, canEdit } from "@/lib/permissions";
 
 interface Quotation {
   id: string;
@@ -25,6 +27,11 @@ interface Vendor {
 }
 
 export default function VendorsPage() {
+  const { data: session } = useSession();
+  const role = (session?.user as any)?.role;
+  const allowEdit = canEdit(role);
+  const allowCreate = canCreate(role);
+
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -236,7 +243,7 @@ export default function VendorsPage() {
 
       <header className="bg-white border-b border-slate-200 py-5 px-6 sm:px-12 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 bg-clip-text text-transparent">
+          <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 dark:from-slate-50 dark:via-indigo-200 dark:to-slate-50 bg-clip-text text-transparent">
             合作廠商資料庫
           </h1>
           <p className="text-sm text-slate-500 mt-1">
@@ -443,26 +450,28 @@ export default function VendorsPage() {
                                     {q.title}
                                   </p>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                  <Link
-                                    href={`/quotations/${q.id}/edit`}
-                                    className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded border border-transparent hover:border-slate-100 transition-all"
-                                    title="編輯報價單"
-                                  >
-                                    <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                      <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                    </svg>
-                                  </Link>
-                                  <button
-                                    onClick={() => handleDeleteQuotation(q.id, q.quotationNumber)}
-                                    className="p-1 text-slate-400 hover:text-rose-600 hover:bg-white rounded border border-transparent hover:border-slate-100 transition-all"
-                                    title="刪除報價單"
-                                  >
-                                    <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
-                                  </button>
-                                </div>
+                                {allowEdit && (
+                                  <div className="flex items-center gap-1.5">
+                                    <Link
+                                      href={`/quotations/${q.id}/edit`}
+                                      className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-white rounded border border-transparent hover:border-slate-100 transition-all"
+                                      title="編輯報價單"
+                                    >
+                                      <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                      </svg>
+                                    </Link>
+                                    <button
+                                      onClick={() => handleDeleteQuotation(q.id, q.quotationNumber)}
+                                      className="p-1 text-slate-400 hover:text-rose-600 hover:bg-white rounded border border-transparent hover:border-slate-100 transition-all"
+                                      title="刪除報價單"
+                                    >
+                                      <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -474,6 +483,7 @@ export default function VendorsPage() {
                       </div>
                     </div>
 
+                    {allowEdit && (
                     <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
                       <button
                         onClick={() => handleEditInit(vendor)}
@@ -506,14 +516,20 @@ export default function VendorsPage() {
                         刪除
                       </button>
                     </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
           </div>
 
-          {/* 右欄：表單 */}
+          {/* 右欄：表單（僅檢視者無此欄，因無新增/編輯權限） */}
           <div className="lg:col-span-5 xl:col-span-4 sticky top-6">
+            {!(editingId ? allowEdit : allowCreate) ? (
+              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md p-6 text-center text-sm text-slate-500">
+                目前角色僅可查看廠商資料，無新增/編輯權限。
+              </div>
+            ) : (
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md p-6">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
                 <h2 className="font-bold text-slate-900 flex items-center gap-2">
@@ -647,6 +663,7 @@ export default function VendorsPage() {
                 </button>
               </form>
             </div>
+            )}
           </div>
         </div>
       </main>

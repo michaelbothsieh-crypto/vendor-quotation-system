@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./print.css";
 import ThemeToggle from "@/components/ThemeToggle";
+import Providers from "@/components/Providers";
 
 const THEME_INIT_SCRIPT = `
 (function () {
@@ -43,8 +44,10 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        {children}
-        <ThemeToggle />
+        <Providers>
+          {children}
+          <ThemeToggle />
+        </Providers>
       </body>
     </html>
   );
