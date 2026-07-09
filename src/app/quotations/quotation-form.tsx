@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { calculateItem, calculateQuotation } from "@/lib/calculator";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 
 interface ItemState {
   id?: string;
@@ -139,6 +140,20 @@ export default function QuotationForm({ id, initialData, readOnly = false }: Quo
 
     fetchData();
   }, [isEditMode, initialData]);
+
+  // 表單載入完成的那一刻拍一張「初始狀態」快照，之後任何欄位偏離快照都算有異動。
+  const [baselineSnapshot, setBaselineSnapshot] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isLoading && baselineSnapshot === null) {
+      setBaselineSnapshot(JSON.stringify({ title, vendorId, taxRate, rdRate, pmRate, qcRate, integrationRate, categories }));
+    }
+  }, [isLoading, baselineSnapshot, title, vendorId, taxRate, rdRate, pmRate, qcRate, integrationRate, categories]);
+
+  const isDirty =
+    !readOnly &&
+    baselineSnapshot !== null &&
+    JSON.stringify({ title, vendorId, taxRate, rdRate, pmRate, qcRate, integrationRate, categories }) !== baselineSnapshot;
+  useUnsavedChangesGuard(isDirty);
 
   // 即時計算費率與總工時
   const currentRates = { rdRate, pmRate, qcRate, integrationRate };

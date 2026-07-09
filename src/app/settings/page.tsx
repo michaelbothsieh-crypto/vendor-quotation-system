@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { canEdit } from "@/lib/permissions";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
@@ -13,6 +14,11 @@ export default function SettingsPage() {
   const [pmRate, setPmRate] = useState<string>("6000");
   const [qcRate, setQcRate] = useState<string>("5000");
   const [integrationRate, setIntegrationRate] = useState<string>("6500");
+  const [rateBaseline, setRateBaseline] = useState({ rdRate: "8000", pmRate: "6000", qcRate: "5000", integrationRate: "6500" });
+
+  const isDirty =
+    JSON.stringify({ rdRate, pmRate, qcRate, integrationRate }) !== JSON.stringify(rateBaseline);
+  useUnsavedChangesGuard(isDirty);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,10 +33,17 @@ export default function SettingsPage() {
         throw new Error("無法取得費率設定資料");
       }
       const data = await res.json();
-      setRdRate(String(data.DEFAULT_RD_RATE ?? 8000));
-      setPmRate(String(data.DEFAULT_PM_RATE ?? 6000));
-      setQcRate(String(data.DEFAULT_QC_RATE ?? 5000));
-      setIntegrationRate(String(data.DEFAULT_INTEGRATION_RATE ?? 6500));
+      const loaded = {
+        rdRate: String(data.DEFAULT_RD_RATE ?? 8000),
+        pmRate: String(data.DEFAULT_PM_RATE ?? 6000),
+        qcRate: String(data.DEFAULT_QC_RATE ?? 5000),
+        integrationRate: String(data.DEFAULT_INTEGRATION_RATE ?? 6500),
+      };
+      setRdRate(loaded.rdRate);
+      setPmRate(loaded.pmRate);
+      setQcRate(loaded.qcRate);
+      setIntegrationRate(loaded.integrationRate);
+      setRateBaseline(loaded);
       setError(null);
     } catch (err: any) {
       setError(err.message || "載入設定時發生未知錯誤");
@@ -88,6 +101,7 @@ export default function SettingsPage() {
       }
 
       setSuccessMessage("系統預設費率設定已儲存成功！");
+      setRateBaseline({ rdRate, pmRate, qcRate, integrationRate });
     } catch (err: any) {
       setError(err.message || "伺服器通訊錯誤");
     } finally {

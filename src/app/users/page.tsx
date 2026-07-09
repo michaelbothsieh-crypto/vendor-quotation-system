@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
 
 interface User {
   id: string;
@@ -10,6 +11,8 @@ interface User {
   role: string;
   createdAt: string;
 }
+
+const EMPTY_USER_FORM = { email: "", password: "", name: "", role: "VIEWER" };
 
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -21,6 +24,14 @@ export default function UsersPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState("VIEWER");
+  const [formBaseline, setFormBaseline] = useState(EMPTY_USER_FORM);
+
+  // 密碼欄位不列入 baseline 比較：留空是常態（編輯時代表不改密碼），
+  // 不該讓「什麼都沒動」的表單被誤判成有異動。
+  const isDirty =
+    JSON.stringify({ email, name, role }) !== JSON.stringify({ email: formBaseline.email, name: formBaseline.name, role: formBaseline.role }) ||
+    password.length > 0;
+  useUnsavedChangesGuard(isDirty);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -62,6 +73,7 @@ export default function UsersPage() {
     setName("");
     setRole("VIEWER");
     setSubmitError(null);
+    setFormBaseline(EMPTY_USER_FORM);
   };
 
   const handleEdit = (u: User) => {
@@ -71,6 +83,7 @@ export default function UsersPage() {
     setName(u.name);
     setRole(u.role);
     setSubmitError(null);
+    setFormBaseline({ email: u.email, password: "", name: u.name, role: u.role });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

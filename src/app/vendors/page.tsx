@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { canCreate, canEdit } from "@/lib/permissions";
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
+
+const EMPTY_VENDOR_FORM = { name: "", taxId: "", contactName: "", contactEmail: "", contactPhone: "", address: "" };
 
 interface Quotation {
   id: string;
@@ -45,6 +48,12 @@ export default function VendorsPage() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [formBaseline, setFormBaseline] = useState(EMPTY_VENDOR_FORM);
+
+  const isDirty =
+    JSON.stringify({ name, taxId, contactName, contactEmail, contactPhone, address }) !==
+    JSON.stringify(formBaseline);
+  useUnsavedChangesGuard(isDirty);
 
   // 提交與操作狀態
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,6 +100,7 @@ export default function VendorsPage() {
     setContactPhone("");
     setAddress("");
     setSubmitError(null);
+    setFormBaseline(EMPTY_VENDOR_FORM);
   };
 
   // 進入編輯模式
@@ -103,6 +113,14 @@ export default function VendorsPage() {
     setContactPhone(vendor.contactPhone || "");
     setAddress(vendor.address || "");
     setSubmitError(null);
+    setFormBaseline({
+      name: vendor.name,
+      taxId: vendor.taxId || "",
+      contactName: vendor.contactName,
+      contactEmail: vendor.contactEmail,
+      contactPhone: vendor.contactPhone || "",
+      address: vendor.address || "",
+    });
     // 滾動到表單位置（手機版體驗佳）
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
