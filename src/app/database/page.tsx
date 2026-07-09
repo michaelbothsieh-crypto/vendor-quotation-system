@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 
 interface DatabaseSnapshot {
@@ -252,9 +252,8 @@ export default function DatabasePage() {
                     </thead>
                     <tbody>
                       {filteredRows.map((row, rowIdx) => (
-                        <>
+                        <Fragment key={rowIdx}>
                           <tr
-                            key={rowIdx}
                             className="border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors cursor-pointer"
                             onClick={() => toggleRow(rowIdx)}
                           >
@@ -294,7 +293,7 @@ export default function DatabasePage() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       ))}
                     </tbody>
                   </table>

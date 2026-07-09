@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { calculateQuotation } from "@/lib/calculator";
 
 interface Vendor {
@@ -334,8 +334,8 @@ export default function DashboardPage() {
                     const historyItems = historyMap[q.id] ?? [];
 
                     return (
-                      <>
-                        <tr key={q.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-100">
+                      <Fragment key={q.id}>
+                        <tr className="hover:bg-slate-50/50 transition-colors border-b border-slate-100">
                           {/* 展開按鈕欄（版本 > 1 才顯示） */}
                           <td className="py-4 px-4">
                             {q.version > 1 && (
@@ -480,7 +480,7 @@ export default function DashboardPage() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>
