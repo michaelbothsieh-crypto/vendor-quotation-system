@@ -44,6 +44,19 @@ async function main() {
 
   console.log("連線成功！開始截圖流程...");
 
+  // 0. 截圖登入頁，然後登入（後續頁面都需要登入才能存取）
+  console.log("正在截圖登入頁...");
+  await page.goto("http://localhost:3000/login");
+  await delay(500);
+  await page.screenshot({ path: path.join(outputDir, "login.png") });
+
+  console.log("正在登入系統...");
+  await page.fill('input[type="email"]', "admin@example.com");
+  await page.fill('input[type="password"]', "REDACTED");
+  await page.click('button[type="submit"]');
+  await page.waitForURL("http://localhost:3000/", { timeout: 15000 });
+  await delay(500);
+
   // 1. 截圖首頁 Dashboard
   console.log("正在截圖首頁...");
   await page.goto("http://localhost:3000");

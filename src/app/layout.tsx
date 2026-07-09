@@ -5,6 +5,7 @@ import "./print.css";
 import ThemeToggle from "@/components/ThemeToggle";
 import Providers from "@/components/Providers";
 import AppHeader from "@/components/AppHeader";
+import { auth } from "@/auth";
 
 const THEME_INIT_SCRIPT = `
 (function () {
@@ -30,11 +31,12 @@ export const metadata: Metadata = {
   description: "制式化的廠商收費與開發專案工時報價系統",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
   return (
     <html
       lang="zh-TW"
@@ -45,7 +47,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        <Providers>
+        <Providers session={session}>
           <AppHeader />
           {children}
           <ThemeToggle />
