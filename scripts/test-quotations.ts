@@ -73,6 +73,8 @@ async function runTest() {
     if (!createdQuotation.quotationNumber.startsWith("Q-")) throw new Error("單號格式錯誤");
     if (createdQuotation.categories.length !== 1) throw new Error("大項數量錯誤");
     if (createdQuotation.categories[0].items.length !== 1) throw new Error("細項數量錯誤");
+    if (createdQuotation.version !== 1) throw new Error("預設版本應為 1");
+    if (createdQuotation.isLatest !== true) throw new Error("預設 isLatest 應為 true");
 
     // 3. 測試取得所有報價單 (GET)
     console.log("\n3. 測試取得所有報價單 (GET)...");
@@ -99,6 +101,8 @@ async function runTest() {
     }
     const detail = await getByIdRes.json();
     if (detail.title !== "測試整合專案") throw new Error("詳情資料錯誤");
+    if (detail.version !== 1) throw new Error("詳情中版本應為 1");
+    if (detail.isLatest !== true) throw new Error("詳情中 isLatest 應為 true");
     console.log("成功取得正確的報價單詳情");
 
     // 5. 測試更新報價單 (PUT /[id])
@@ -158,6 +162,8 @@ async function runTest() {
     if (updated.title !== putPayload.title) throw new Error("更新後專案名稱不符");
     if (updated.rdRate !== 9000) throw new Error("更新後費率不符");
     if (updated.categories.length !== 2) throw new Error("更新後大項數量錯誤");
+    if (updated.version !== 1) throw new Error("更新後預設版本應為 1");
+    if (updated.isLatest !== true) throw new Error("更新後預設 isLatest 應為 true");
 
     // 6. 測試刪除報價單 (DELETE /[id])
     console.log("\n6. 測試刪除報價單 (DELETE /[id])...");

@@ -70,6 +70,31 @@ async function verifySeed() {
   }
 
   console.log('✅ 驗證成功: 示範廠商資料完全正確！');
+
+  // 3. 驗證示範報價單資料
+  const demoQuotation = await prisma.quotation.findUnique({
+    where: { quotationNumber: 'Q-DEMO-001' },
+    include: { categories: { include: { items: true } } },
+  });
+
+  if (!demoQuotation) {
+    throw new Error('驗證失敗: 找不到示範報價單 (Q-DEMO-001)');
+  }
+
+  if (demoQuotation.title !== '示範報價專案') {
+    throw new Error(`驗證失敗: 報價單標題不符。預期: 示範報價專案，實際: ${demoQuotation.title}`);
+  }
+  if (demoQuotation.version !== 1) {
+    throw new Error(`驗證失敗: 報價單版本不符。預期: 1，實際: ${demoQuotation.version}`);
+  }
+  if (demoQuotation.isLatest !== true) {
+    throw new Error(`驗證失敗: 報價單 isLatest 不符。預期: true，實際: ${demoQuotation.isLatest}`);
+  }
+  if (demoQuotation.categories.length !== 1 || demoQuotation.categories[0].items.length !== 1) {
+    throw new Error('驗證失敗: 報價單大項或細項數量不符');
+  }
+
+  console.log('✅ 驗證成功: 示範報價單資料與版本屬性完全正確！');
   console.log('\n恭喜！所有 Seed 資料驗證成功！');
 }
 

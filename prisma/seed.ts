@@ -44,6 +44,59 @@ async function main() {
     },
   });
   console.log(`已建立/更新示範廠商: ${vendor.name} (${vendor.id})`);
+
+  // 建立一筆測試用的示範報價單資料 (Quotation)
+  console.log('開始植入示範報價單資料...');
+  const quotation = await prisma.quotation.upsert({
+    where: { quotationNumber: 'Q-DEMO-001' },
+    update: {
+      title: '示範報價專案',
+      vendorId: vendor.id,
+      status: 'DRAFT',
+      taxRate: 0.05,
+      rdRate: 8000,
+      pmRate: 6000,
+      qcRate: 5000,
+      integrationRate: 6500,
+      version: 1,
+      isLatest: true,
+    },
+    create: {
+      quotationNumber: 'Q-DEMO-001',
+      title: '示範報價專案',
+      vendorId: vendor.id,
+      status: 'DRAFT',
+      taxRate: 0.05,
+      rdRate: 8000,
+      pmRate: 6000,
+      qcRate: 5000,
+      integrationRate: 6500,
+      version: 1,
+      isLatest: true,
+      categories: {
+        create: [
+          {
+            name: '示範大項',
+            sortOrder: 0,
+            items: {
+              create: [
+                {
+                  description: '示範細項 1.1',
+                  rdDays: 2.0,
+                  pmDays: 0.5,
+                  qcDays: 0.5,
+                  integrationDays: 0.5,
+                  note: '無',
+                  sortOrder: 0,
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+  });
+  console.log(`已建立/更新示範報價單: ${quotation.title} (${quotation.quotationNumber})`);
 }
 
 main()
