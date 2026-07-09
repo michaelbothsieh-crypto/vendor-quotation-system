@@ -21,20 +21,25 @@ model Vendor {
 }
 
 model Quotation {
-  id              String              @id @default(uuid())
-  quotationNumber String              @unique
-  title           String
-  vendorId        String
-  vendor          Vendor              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  status          String              @default("DRAFT") // 狀態：草稿 (DRAFT), 已寄出 (SENT), 已核准 (APPROVED)
-  taxRate         Float               @default(0.05)
-  rdRate          Int                 @default(8000)
-  pmRate          Int                 @default(6000)
-  qcRate          Int                 @default(5000)
-  integrationRate Int                 @default(6500)
-  categories      QuotationCategory[]
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+  id                String              @id @default(uuid())
+  quotationNumber   String              @unique
+  title             String
+  vendorId          String
+  vendor            Vendor              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  status            String              @default("DRAFT") // 狀態：草稿 (DRAFT), 已寄出 (SENT), 已核准 (APPROVED)
+  taxRate           Float               @default(0.05)
+  rdRate            Int                 @default(8000)
+  pmRate            Int                 @default(6000)
+  qcRate            Int                 @default(5000)
+  integrationRate   Int                 @default(6500)
+  version           Int                 @default(1)
+  isLatest          Boolean             @default(true)
+  parentQuotationId String?             @unique
+  parentQuotation   Quotation?          @relation("QuotationVersion", fields: [parentQuotationId], references: [id], onDelete: SetNull)
+  childQuotation    Quotation?          @relation("QuotationVersion")
+  categories        QuotationCategory[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model QuotationCategory {
