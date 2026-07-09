@@ -79,6 +79,9 @@ npm run dev
     2.  登入後，僅 `ADMIN` 能在全域導覽列看到「**人員管理**」按鈕，進入 `/users` 新增人員、指定角色、重設密碼或刪除帳號（無法刪除自己）。
     3.  非 `ADMIN` 使用者在廠商/報價單/費率設定頁面看到的新增、編輯、刪除按鈕會依角色自動隱藏；伺服器端（`src/lib/permissions.ts`、`src/proxy.ts`）也會同步擋下對應的 API 請求，前端隱藏只是體驗優化，非唯一防線。
 
+![登入頁](public/screenshots/login.png)
+![人員管理](public/screenshots/users.png)
+
 ### 第一步：合作廠商管理 (`/vendors`)
 *   **用途**：報價單必須歸屬於特定廠商。在開立報價單前，請先在此頁面登錄廠商資料。
 *   **操作**：
@@ -147,6 +150,8 @@ npm run dev
 ### 第九步：深色模式切換
 *   **說明**：畫面左下角的圓形按鈕可切換淺色/深色主題，偏好會存在瀏覽器 `localStorage`，下次造訪時自動套用（若從未設定過，預設跟隨系統的 `prefers-color-scheme`）。深色模式下瀏覽器原生表單元件（如數字輸入框）外觀也會同步切換，避免出現淺色系統預設樣式殘留。
 
+![深色模式](public/screenshots/darkmode.png)
+
 ---
 
 ## 🖼️ UI 截圖 (Screenshots)
@@ -156,8 +161,6 @@ npm run dev
 
 ### 資料庫 Raw Data 檢視器 (`/database`)
 ![Database Inspector](public/screenshots/database-view.png)
-
-> 登入頁、人員管理頁與深色模式尚無對應截圖，之後補上正式站畫面時可一併更新此區塊。
 
 ---
 
