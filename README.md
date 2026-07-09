@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 廠商收費報價管理系統 (Vendor Quotation System)
 
-## Getting Started
+本系統是一套制式化、高精度的廠商開發案工時報價系統。前端採用 Next.js 與 React 構建動態巢狀報價編輯器，資料庫使用 Prisma ORM 搭配 PostgreSQL，並配置了列印專用的 CSS 樣式，支援將報價單一鍵匯出為精美的 HTML/PDF。
 
-First, run the development server:
+---
 
+## 🛠️ 技術棧 (Tech Stack)
+
+*   **全棧框架**：Next.js 14+ (App Router, Turbopack)
+*   **資料庫 ORM**：Prisma ORM (PostgreSQL)
+*   **開發環境資料庫**：Docker PostgreSQL (image: `postgres:15-alpine`)
+*   **生產環境資料庫**：Neon Serverless PostgreSQL (專為 Vercel 部署設計)
+*   **樣式設計**：Tailwind CSS / Vanilla CSS, Print CSS
+*   **型態安全**：TypeScript
+
+---
+
+## 🚀 快速開始 (Quick Start)
+
+### 1. 本地開發環境準備
+本專案本地開發預設使用 Docker 運行 PostgreSQL。請確保您的電腦已啟動 Docker Desktop。
+
+在專案根目錄下，啟動本地資料庫容器：
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker compose up -d
+```
+這會在背景啟動一個名稱為 `quotation-db` 的 PostgreSQL 資料庫，並監聽本地的 `5432` 埠口。
+
+### 2. 環境變數配置
+複製環境變數範本 `.env.example` 並命名為 `.env`：
+```bash
+cp .env.example .env
+```
+確認 `.env` 中的 `DATABASE_URL` 設定正確：
+```env
+DATABASE_URL="postgresql://postgres:mysecretpassword@localhost:5432/quotation_db?schema=public"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3. 安裝專案依賴
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4. 執行資料庫遷移與同步
+執行 Prisma 遷移腳本，在資料庫中建立資料表結構：
+```bash
+npx prisma migrate dev --name init
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 5. 初始化系統預設費率與廠商資料 (Seed)
+執行資料庫 Seeding 腳本，寫入預設的角色工時費率（RD: 8000, PM: 6000, QC: 5000, 整合: 6500）及一筆示範廠商：
+```bash
+npx prisma db seed
+```
 
-## Learn More
+### 6. 啟動開發伺服器
+```bash
+npm run dev
+```
+啟動後，請在瀏覽器造訪：[http://localhost:3000](http://localhost:3000)
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 📖 系統操作流程說明 (Operations Manual)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 第一步：合作廠商管理 (`/vendors`)
+*   **用途**：報價單必須歸屬於特定廠商。在開立報價單前，請先在此頁面登錄廠商資料。
+*   **操作**：
+    1.  點選首頁右上角的「**合作廠商管理**」。
+    2.  在左側表單中填寫「廠商名稱」、「統一編號 (8位純數字)」、「聯絡窗口」與「地址」等欄位，點選「儲存」。
+    3.  右側列表會即時更新。您可對既有廠商點選「編輯」或「刪除」（刪除廠商將會自動級聯刪除該廠商所有的歷史報價單，請小心操作）。
 
-## Deploy on Vercel
+### 第二步：全域費率設定 (`/settings`)
+*   **用途**：管理 RD、PM、QC 以及系統整合角色的全域預設「日薪/天費率」，這會作為建立新報價單時的預設單價。
+*   **操作**：
+    1.  點選首頁右上角的「**全域費率設定**」。
+    2.  依據專案的收費標準，輸入各角色的每日單價（必須為正整數），點選「儲存預設設定」。
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 第三步：新建報價單 (`/quotations/new`)
+*   **用途**：建立報價單，動態增刪功能大項與細項，並估算 RD/PM/QC/整合工時。
+*   **操作**：
+    1.  在首頁控制台點選「**新建報價單**」。
+    2.  輸入「專案報價名稱」，並在下拉選單中「選擇廠商」，系統會自動在旁帶出該廠商的統編與聯絡資訊。
+    3.  **動態大項編輯**：點選底部「**新增功能大項**」按鈕，建立例如「會員系統」、「後台管理」等模組。
+    4.  **細項工時填寫**：在各大項內點選「**新增細項**」，輸入描述（如：Google 登入串接）與 RD、PM、QC、整合的天數工時（支援小數點，如 0.5 天）。前端會即時透過高精度演算法，重算並顯示該細項的未稅小計金額。
+    5.  **費率微調**：可在頁面下方微調本張報價單的角色日薪，此微調僅生效於本張報價單，不影響系統全域預設費率。
+    6.  **金額確認**：確認底部各角色總天數、各角色總額、未稅總計、營業稅 (5%) 及含稅總金額無誤後，點選「**儲存報價單**」。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 第四步：歷史報價單管理與列印 PDF (`/`)
+*   **用途**：查詢、搜尋歷史報價單，並預覽或另存為 PDF/HTML。
+*   **操作**：
+    1.  返回首頁，可在搜尋框輸入「單號」、「專案名稱」或「廠商名稱」即時過濾歷史列表。
+    2.  對目標報價單點選「**預覽/列印**」進入列印預覽頁面。
+    3.  列印頁面已去除所有控制列與網頁邊框，並預留了「客戶簽認」與「我方簽認」的簽章區。
+    4.  點選上方的「**列印報價單 (PDF)**」按鈕，即可呼叫瀏覽器原生列印視窗。在列印設定的印表機中選擇「**另存為 PDF**」即可將報價單輸出下載。

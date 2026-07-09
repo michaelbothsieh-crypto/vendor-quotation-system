@@ -28,6 +28,7 @@ interface Vendor {
 
 interface QuotationFormProps {
   id?: string; // 編輯模式時傳入
+  readOnly?: boolean; // 唯讀模式（歷史封存版本使用）
   initialData?: {
     title: string;
     vendorId: string;
@@ -36,11 +37,12 @@ interface QuotationFormProps {
     pmRate: number;
     qcRate: number;
     integrationRate: number;
+    version?: number;
     categories: any[];
   };
 }
 
-export default function QuotationForm({ id, initialData }: QuotationFormProps) {
+export default function QuotationForm({ id, initialData, readOnly = false }: QuotationFormProps) {
   const router = useRouter();
   const isEditMode = !!id;
 
@@ -303,8 +305,19 @@ export default function QuotationForm({ id, initialData }: QuotationFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-7xl mx-auto pb-16">
-      {errorMessage && (
+    <form onSubmit={readOnly ? (e) => e.preventDefault() : handleSubmit} className="space-y-8 max-w-7xl mx-auto pb-16">
+      {/* 唯讀模式歷史版本警告條 */}
+      {readOnly && (
+        <div className="p-4 bg-amber-50 border border-amber-300 text-amber-800 rounded-2xl text-sm font-medium flex items-start gap-3">
+          <span className="mt-0.5 text-lg">⚠️</span>
+          <div>
+            <p className="font-bold">此為歷史封存版本（v{initialData?.version ?? "?"}），處於唯讀狀態</p>
+            <p className="text-xs mt-1 text-amber-700">歷史版本不開放修改，如需調整請返回首頁找到最新版本進行編輯。</p>
+          </div>
+        </div>
+      )}
+
+      {errorMessage && !readOnly && (
         <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-sm font-medium flex items-center gap-3">
           <span className="h-2 w-2 rounded-full bg-rose-600"></span>
           {errorMessage}

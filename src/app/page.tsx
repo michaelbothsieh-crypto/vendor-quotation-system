@@ -14,6 +14,8 @@ interface Quotation {
   quotationNumber: string;
   title: string;
   status: string;
+  version: number;
+  isLatest: boolean;
   taxRate: number;
   rdRate: number;
   pmRate: number;
@@ -32,12 +34,26 @@ interface Quotation {
   }[];
 }
 
+interface HistoryQuotation {
+  id: string;
+  quotationNumber: string;
+  title: string;
+  version: number;
+  isLatest: boolean;
+  createdAt: string;
+}
+
 export default function DashboardPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // 版本歷史相關 State
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const [historyMap, setHistoryMap] = useState<Record<string, HistoryQuotation[]>>({});
+  const [historyLoading, setHistoryLoading] = useState<Record<string, boolean>>({});
 
   const fetchQuotations = async () => {
     try {
@@ -69,7 +85,7 @@ export default function DashboardPage() {
   }, [successMessage]);
 
   const handleDelete = async (id: string, quotationNumber: string) => {
-    if (!window.confirm(`確定要刪除報價單「${quotationNumber}」嗎？此動作將無法還原！`)) {
+    if (!window.confirm(`確定要刪除報價單「${quotationNumber}」嗎？此動作將同時刪除所有歷史版本，無法還原！`)) {
       return;
     }
 
@@ -87,6 +103,40 @@ export default function DashboardPage() {
       fetchQuotations();
     } catch (err: any) {
       alert(err.message);
+    }
+  };
+
+  // 展開/收起歷史版本
+  const toggleHistory = async (quotationId: string, qNumber: string) => {
+    if (expandedIds[quotationId]) {
+      // 收起
+      setExpandedIds((prev) => ({ ...prev, [quotationId]: false }));
+      return;
+    }
+
+    // 已撈過就直接展開
+    if (historyMap[quotationId]) {
+      setExpandedIds((prev) => ({ ...prev, [quotationId]: true }));
+      return;
+    }
+
+    // 撈取該單號下的所有版本（排除當前最新版）
+    setHistoryLoading((prev) => ({ ...prev, [quotationId]: true }));
+    try {
+      const res = await fetch(
+        `/api/quotations?allVersions=true&quotationNumber=${encodeURIComponent(qNumber)}`
+      );
+      if (res.ok) {
+        const data: HistoryQuotation[] = await res.json();
+        // 只保留歷史版本（非最新版本）
+        const historyOnly = data.filter((q) => q.id !== quotationId && !q.isLatest);
+        setHistoryMap((prev) => ({ ...prev, [quotationId]: historyOnly }));
+      }
+    } catch (e) {
+      console.error("載入歷史版本失敗:", e);
+    } finally {
+      setHistoryLoading((prev) => ({ ...prev, [quotationId]: false }));
+      setExpandedIds((prev) => ({ ...prev, [quotationId]: true }));
     }
   };
 
@@ -115,6 +165,13 @@ export default function DashboardPage() {
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200/50">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
             已寄出
+          </span>
+        );
+      case "ARCHIVED":
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-200/50">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+            已封存
           </span>
         );
       case "DRAFT":
@@ -179,6 +236,12 @@ export default function DashboardPage() {
               className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
             >
               費率設定
+            </Link>
+            <Link
+              href="/database"
+              className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-500 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
+            >
+              🗄️ 資料庫
             </Link>
           </div>
         </div>
@@ -246,17 +309,18 @@ export default function DashboardPage() {
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-500 font-semibold">
-                    <th className="py-4 px-6">單號</th>
-                    <th className="py-4 px-6">專案名稱</th>
-                    <th className="py-4 px-6">合作廠商</th>
-                    <th className="py-4 px-6 text-right">總工時</th>
-                    <th className="py-4 px-6 text-right">含稅總額</th>
-                    <th className="py-4 px-6 text-center">狀態</th>
-                    <th className="py-4 px-6">建立時間</th>
-                    <th className="py-4 px-6 text-center">動作</th>
+                    <th className="py-4 px-4 w-8"></th>
+                    <th className="py-4 px-4">單號</th>
+                    <th className="py-4 px-4">專案名稱</th>
+                    <th className="py-4 px-4">合作廠商</th>
+                    <th className="py-4 px-4 text-right">總工時</th>
+                    <th className="py-4 px-4 text-right">含稅總額</th>
+                    <th className="py-4 px-4 text-center">狀態</th>
+                    <th className="py-4 px-4">建立時間</th>
+                    <th className="py-4 px-4 text-center">動作</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody>
                   {filteredQuotations.map((q) => {
                     const items = q.categories.flatMap((cat: any) => cat.items);
                     const summary = calculateQuotation(items, {
@@ -265,66 +329,158 @@ export default function DashboardPage() {
                       qcRate: q.qcRate,
                       integrationRate: q.integrationRate,
                     }, q.taxRate);
+                    const isExpanded = expandedIds[q.id];
+                    const isHistLoading = historyLoading[q.id];
+                    const historyItems = historyMap[q.id] ?? [];
 
                     return (
-                      <tr key={q.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-4 px-6 font-mono text-xs font-bold text-slate-750">
-                          <span className="inline-block px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100/50">
-                            {q.quotationNumber}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 font-bold text-slate-900 line-clamp-1 max-w-[200px]" title={q.title}>
-                          {q.title}
-                        </td>
-                        <td className="py-4 px-6 font-medium text-slate-700 truncate max-w-[150px]" title={q.vendor.name}>
-                          {q.vendor.name}
-                        </td>
-                        <td className="py-4 px-6 text-right font-mono text-slate-600 font-medium">
-                          {summary.totalDays} 人天
-                        </td>
-                        <td className="py-4 px-6 text-right font-mono font-bold text-slate-900">
-                          ${summary.total.toLocaleString()}
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          {getStatusBadge(q.status)}
-                        </td>
-                        <td className="py-4 px-6 text-slate-500 font-mono text-xs">
-                          {new Date(q.createdAt).toLocaleDateString("zh-TW")}
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center justify-center gap-2">
-                            <Link
-                              href={`/quotations/${q.id}/print`}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-indigo-650 hover:text-indigo-750 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                              title="預覽/列印"
-                            >
-                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                              </svg>
-                              列印
-                            </Link>
-                            <Link
-                              href={`/quotations/${q.id}/edit`}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
-                              title="編輯"
-                            >
-                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                              編輯
-                            </Link>
-                            <button
-                              onClick={() => handleDelete(q.id, q.quotationNumber)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100"
-                              title="刪除"
-                            >
-                              <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                      <>
+                        <tr key={q.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-100">
+                          {/* 展開按鈕欄（版本 > 1 才顯示） */}
+                          <td className="py-4 px-4">
+                            {q.version > 1 && (
+                              <button
+                                onClick={() => toggleHistory(q.id, q.quotationNumber)}
+                                className="p-1 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                                title={isExpanded ? "收起歷史版本" : "展開歷史版本"}
+                              >
+                                <svg
+                                  className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
+                                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </button>
+                            )}
+                          </td>
+                          <td className="py-4 px-4 font-mono text-xs font-bold text-slate-750">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-block px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100/50">
+                                {q.quotationNumber}
+                              </span>
+                              {q.version > 1 && (
+                                <span className="inline-block px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded text-[10px] font-bold border border-violet-200/60">
+                                  v{q.version}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 font-bold text-slate-900 max-w-[200px]">
+                            <div className="truncate" title={q.title}>{q.title}</div>
+                          </td>
+                          <td className="py-4 px-4 font-medium text-slate-700 truncate max-w-[150px]" title={q.vendor.name}>
+                            {q.vendor.name}
+                          </td>
+                          <td className="py-4 px-4 text-right font-mono text-slate-600 font-medium">
+                            {summary.totalDays} 人天
+                          </td>
+                          <td className="py-4 px-4 text-right font-mono font-bold text-slate-900">
+                            ${summary.total.toLocaleString()}
+                          </td>
+                          <td className="py-4 px-4 text-center">
+                            {getStatusBadge(q.status)}
+                          </td>
+                          <td className="py-4 px-4 text-slate-500 font-mono text-xs">
+                            {new Date(q.createdAt).toLocaleDateString("zh-TW")}
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex items-center justify-center gap-2">
+                              <Link
+                                href={`/quotations/${q.id}/print`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-indigo-650 hover:text-indigo-750 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                                title="預覽/列印"
+                              >
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                列印
+                              </Link>
+                              <Link
+                                href={`/quotations/${q.id}/edit`}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+                                title="編輯"
+                              >
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                                編輯
+                              </Link>
+                              <button
+                                onClick={() => handleDelete(q.id, q.quotationNumber)}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-100"
+                                title="刪除"
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* 歷史版本子表格（展開時渲染） */}
+                        {isExpanded && (
+                          <tr key={`${q.id}-history`}>
+                            <td colSpan={9} className="px-6 py-0 bg-indigo-50/30">
+                              <div className="border-l-4 border-indigo-200 pl-4 py-3 my-2">
+                                <p className="text-xs font-semibold text-indigo-700 mb-2">
+                                  📜 {q.quotationNumber} 的版本變更歷史紀錄
+                                </p>
+                                {isHistLoading ? (
+                                  <p className="text-xs text-slate-400 animate-pulse">載入歷史版本中...</p>
+                                ) : historyItems.length === 0 ? (
+                                  <p className="text-xs text-slate-400">無更早的歷史版本</p>
+                                ) : (
+                                  <table className="w-full text-xs">
+                                    <thead>
+                                      <tr className="text-slate-500 text-left border-b border-indigo-100">
+                                        <th className="pb-1.5 pr-4 font-semibold">版本</th>
+                                        <th className="pb-1.5 pr-4 font-semibold">專案名稱</th>
+                                        <th className="pb-1.5 pr-4 font-semibold">建立時間</th>
+                                        <th className="pb-1.5 font-semibold">操作</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {historyItems.map((hq) => (
+                                        <tr key={hq.id} className="border-t border-indigo-100/60">
+                                          <td className="py-1.5 pr-4">
+                                            <span className="inline-block px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-bold border border-slate-200/60">
+                                              v{hq.version}
+                                            </span>
+                                          </td>
+                                          <td className="py-1.5 pr-4 text-slate-600 truncate max-w-[200px]" title={hq.title}>
+                                            {hq.title}
+                                          </td>
+                                          <td className="py-1.5 pr-4 text-slate-500 font-mono">
+                                            {new Date(hq.createdAt).toLocaleString("zh-TW")}
+                                          </td>
+                                          <td className="py-1.5">
+                                            <div className="flex items-center gap-3">
+                                              <Link
+                                                href={`/quotations/${hq.id}/print`}
+                                                target="_blank"
+                                                className="text-indigo-600 hover:text-indigo-800 hover:underline font-medium"
+                                              >
+                                                列印預覽
+                                              </Link>
+                                              <Link
+                                                href={`/quotations/${hq.id}/edit`}
+                                                className="text-slate-500 hover:text-slate-700 hover:underline"
+                                              >
+                                                唯讀查看
+                                              </Link>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
                     );
                   })}
                 </tbody>
