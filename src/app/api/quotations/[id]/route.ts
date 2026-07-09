@@ -65,6 +65,32 @@ export async function PUT(
       );
     }
 
+    // 驗證工時天數
+    if (categories && Array.isArray(categories)) {
+      for (const cat of categories) {
+        if (cat.items && Array.isArray(cat.items)) {
+          for (const item of cat.items) {
+            const rd = item.rdDays;
+            const pm = item.pmDays;
+            const qc = item.qcDays;
+            const integration = item.integrationDays;
+
+            if (
+              rd === undefined || rd === null || isNaN(parseFloat(rd)) || parseFloat(rd) < 0 ||
+              pm === undefined || pm === null || isNaN(parseFloat(pm)) || parseFloat(pm) < 0 ||
+              qc === undefined || qc === null || isNaN(parseFloat(qc)) || parseFloat(qc) < 0 ||
+              integration === undefined || integration === null || isNaN(parseFloat(integration)) || parseFloat(integration) < 0
+            ) {
+              return NextResponse.json(
+                { error: "工時天數必須為大於或等於 0 的有效數字" },
+                { status: 400 }
+              );
+            }
+          }
+        }
+      }
+    }
+
     const updatedQuotation = await db.$transaction(async (tx) => {
       // 1. 先刪除該報價單舊的 categories（Prisma 會級聯 Cascade 刪除 items）
       await tx.quotationCategory.deleteMany({
