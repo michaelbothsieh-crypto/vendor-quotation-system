@@ -65,22 +65,23 @@ export async function PUT(
       );
     }
 
+    const parseDays = (val: any) => {
+      if (val === undefined || val === null || val === "") return 0;
+      const parsed = parseFloat(val);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+
     // 驗證工時天數
     if (categories && Array.isArray(categories)) {
       for (const cat of categories) {
         if (cat.items && Array.isArray(cat.items)) {
           for (const item of cat.items) {
-            const rd = item.rdDays;
-            const pm = item.pmDays;
-            const qc = item.qcDays;
-            const integration = item.integrationDays;
+            const rd = parseDays(item.rdDays);
+            const pm = parseDays(item.pmDays);
+            const qc = parseDays(item.qcDays);
+            const integration = parseDays(item.integrationDays);
 
-            if (
-              rd === undefined || rd === null || isNaN(parseFloat(rd)) || parseFloat(rd) < 0 ||
-              pm === undefined || pm === null || isNaN(parseFloat(pm)) || parseFloat(pm) < 0 ||
-              qc === undefined || qc === null || isNaN(parseFloat(qc)) || parseFloat(qc) < 0 ||
-              integration === undefined || integration === null || isNaN(parseFloat(integration)) || parseFloat(integration) < 0
-            ) {
+            if (rd < 0 || pm < 0 || qc < 0 || integration < 0) {
               return NextResponse.json(
                 { error: "工時天數必須為大於或等於 0 的有效數字" },
                 { status: 400 }
@@ -91,18 +92,18 @@ export async function PUT(
       }
     }
 
-    // 讀取原報價單與其版本號
-    const parent = await db.quotation.findUnique({
-      where: { id },
-    });
-    if (!parent) {
-      return NextResponse.json(
-        { error: "找不到該報價單資料" },
-        { status: 404 }
-      );
-    }
-
     const newQuotation = await db.$transaction(async (tx) => {
+      // 讀取原報價單與其版本號
+      const parent = await tx.quotation.findUnique({
+        where: { id },
+      });
+      if (!parent) {
+        throw new Error("NOT_FOUND");
+      }
+      if (!parent.isLatest) {
+        throw new Error("NOT_LATEST");
+      }
+
       // 1. 將父報價單設為非最新版且已封存
       await tx.quotation.update({
         where: { id },
@@ -131,10 +132,10 @@ export async function PUT(
               items: {
                 create: (cat.items ?? []).map((item: any, itemIndex: number) => ({
                   description: item.description || "",
-                  rdDays: parseFloat(item.rdDays ?? 0),
-                  pmDays: parseFloat(item.pmDays ?? 0),
-                  qcDays: parseFloat(item.qcDays ?? 0),
-                  integrationDays: parseFloat(item.integrationDays ?? 0),
+                  rdDays: parseDays(item.rdDays),
+                  pmDays: parseDays(item.pmDays),
+                  qcDays: parseDays(item.qcDays),
+                  integrationDays: parseDays(item.integrationDays),
                   note: item.note || "",
                   sortOrder: itemIndex,
                 })),
@@ -157,6 +158,18 @@ export async function PUT(
 
     return NextResponse.json(newQuotation);
   } catch (error: any) {
+    if (error.message === "NOT_FOUND") {
+      return NextResponse.json(
+        { error: "找不到報價單" },
+        { status: 404 }
+      );
+    }
+    if (error.message === "NOT_LATEST") {
+      return NextResponse.json(
+        { error: "無法更新非最新版本的報價單" },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: `更新報價單失敗：${error.message}` },
       { status: 500 }

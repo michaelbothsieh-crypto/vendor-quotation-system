@@ -53,3 +53,33 @@
 ## 整合測試結果
 * 執行 `npx tsx scripts/test-version-apis.ts`：**SUCCESS** (版本鏈建立與關聯驗證 100% 正確)
 * 執行 `npx tsx scripts/test-quotations.ts`：**SUCCESS** (既有測試修復後 100% 通過)
+
+---
+
+## Task 3 修復與漏洞防堵更新 (2026-07-09)
+
+根據最新的 Fix Brief 要求，已成功實作並驗證以下修正：
+
+### 1. 將 Parent 查詢移入交易內部，並增加 isLatest 欄位校驗 (Critical)
+* **檔案**：`src/app/api/quotations/[id]/route.ts`
+* **實作**：
+  * 將原本在 `db.$transaction` 之前的 `db.quotation.findUnique` 移入交易區塊內部（改用交易提供的 `tx.quotation.findUnique`），確保在高併發場景下不會因 Race Condition 導致 `isLatest` 狀態判斷失準。
+  * 查詢取得 `parent` 物件後，實作了防呆校驗：若 `!parent` 回傳 `404` 錯誤（提示「找不到報價單」）；若 `!parent.isLatest` 則回傳 `400` 錯誤（提示「無法更新非最新版本的報價單」），成功攔截並防止對歷史封存版本進行修改。
+
+### 2. 增加 GET API 查詢參數防呆 (Important)
+* **檔案**：`src/app/api/quotations/route.ts`
+* **實作**：
+  * 在 `GET` 處理器中加入強檢驗：若請求參數中包含 `allVersions=true` 但沒有提供 `quotationNumber`，API 將會回傳 `400` 錯誤，提示：「查詢歷史版本時，必須提供報價單號」。
+
+### 3. 優化數值欄位 Fallback 防呆 (Minor)
+* **檔案**：`src/app/api/quotations/[id]/route.ts`
+* **實作**：
+  * 提取了 `parseDays` 輔助解析函式，當 `rdDays`, `pmDays`, `qcDays`, `integrationDays` 傳入空字串 `""` 或 `NaN` 時，將會被妥善且自動回退（Fallback）為 `0`，避免了 `parseFloat` 直接解析成 `NaN` 的問題，同時也保證了大於等於 `0` 的驗證規則能正確運作。
+
+### 4. 擴充整合測試與驗證結果
+* **測試代碼擴充**：`scripts/test-version-apis.ts` 中新增了兩個關鍵驗證步驟：
+  * **[步驟 3.5]**：測試對已封存/歷史版本 (v1Id, `isLatest === false`) 發送 `PUT` 請求，驗證 API 確實回傳 `400`（錯誤訊息為 "無法更新非最新版本的報價單"），而非因 Unique Constraint 產生的 `500` 資料庫衝突錯誤。
+  * **[步驟 5.5]**：測試 GET 請求帶入 `allVersions=true` 但未帶報價單單號，驗證 API 正確回傳 `400`（錯誤訊息為 "查詢歷史版本時，必須提供報價單號"）。
+* **測試與 Build 驗證狀態**：
+  * 執行 `npx tsx scripts/test-version-apis.ts`：**SUCCESS**（包含新增的兩個 400 Bad Request 防呆測試均全部通過）
+  * 執行 `npm run build`：**SUCCESS**（TypeScript 編譯及 Next.js 頁面生成皆無錯誤）

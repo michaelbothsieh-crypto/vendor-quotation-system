@@ -182,6 +182,32 @@ async function runTest() {
     if (dbV2.isLatest !== false) throw new Error("v2 被更新後，isLatest 應改為 false");
     if (dbV2.status !== "ARCHIVED") throw new Error("v2 被更新後，status 應改為 ARCHIVED");
 
+    // 4.5 模擬對已封存/歷史版本 (v1Id) 發送 PUT 請求，應回傳 400 錯誤
+    console.log("\n[步驟 3.5] 測試對已封存/歷史版本 (v1Id) 發送 PUT 請求...");
+    const reqInvalidUpdate = new NextRequest(`http://localhost/api/quotations/${v1Id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "試圖更新歷史版本",
+        vendorId: testVendor.id,
+        rdRate: 8500,
+        pmRate: 6200,
+        qcRate: 5200,
+        integrationRate: 6700,
+      }),
+    });
+    const resInvalidUpdate = await updateHandler(reqInvalidUpdate, { params: Promise.resolve({ id: v1Id }) } as any);
+    console.log(`更新歷史版本回應狀態碼: ${resInvalidUpdate.status}`);
+    if (resInvalidUpdate.status !== 400) {
+      throw new Error(`對歷史版本發送 PUT 應回傳 400 錯誤，但得到 ${resInvalidUpdate.status}`);
+    }
+    const invalidUpdateJson = await resInvalidUpdate.json();
+    console.log(`歷史版本更新錯誤訊息: ${invalidUpdateJson.error}`);
+    if (invalidUpdateJson.error !== "無法更新非最新版本的報價單") {
+      throw new Error(`錯誤訊息不符合預期: ${invalidUpdateJson.error}`);
+    }
+    console.log("歷史版本更新限制驗證成功！");
+
     // 5. 驗證 GET 查詢 (單一號碼的所有版本)
     console.log("\n[步驟 4] 測試 GET api/quotations?allVersions=true&quotationNumber=xxx...");
     const reqGetHistory = new NextRequest(`http://localhost/api/quotations?allVersions=true&quotationNumber=${quotationNum}`, {
@@ -220,6 +246,23 @@ async function runTest() {
     console.log(`預設列表是否包含 v1: ${hasV1}, v2: ${hasV2}, v3: ${hasV3}`);
     if (hasV1 || hasV2) throw new Error("預設的 GET 列表中不應包含非最新版本 (isLatest = false) 的報價單");
     if (!hasV3) throw new Error("預設的 GET 列表中應包含最新版本 (isLatest = true) 的報價單");
+
+    // 6.5 測試 GET 參數驗證：當 allVersions=true 卻沒有提供 quotationNumber 時，應回傳 400
+    console.log("\n[步驟 5.5] 測試 GET 歷史版本但未帶單號，應回傳 400...");
+    const reqInvalidGet = new NextRequest("http://localhost/api/quotations?allVersions=true", {
+      method: "GET",
+    });
+    const resInvalidGet = await getListHandler(reqInvalidGet);
+    console.log(`GET 未帶單號回應狀態碼: ${resInvalidGet.status}`);
+    if (resInvalidGet.status !== 400) {
+      throw new Error(`GET allVersions=true 且無單號應回傳 400，但得到 ${resInvalidGet.status}`);
+    }
+    const invalidGetJson = await resInvalidGet.json();
+    console.log(`GET 未帶單號錯誤訊息: ${invalidGetJson.error}`);
+    if (invalidGetJson.error !== "查詢歷史版本時，必須提供報價單號") {
+      throw new Error(`錯誤訊息不符合預期: ${invalidGetJson.error}`);
+    }
+    console.log("GET 歷史版本參數防呆驗證成功！");
 
     console.log("\n✅ 恭喜！報價單 API 版本控制功能 (GET / PUT) 整合測試全部通過！");
 

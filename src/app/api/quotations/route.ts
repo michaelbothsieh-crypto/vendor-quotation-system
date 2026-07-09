@@ -15,6 +15,13 @@ export async function GET(request?: Request) {
       quotationNumber = searchParams.get("quotationNumber");
     }
 
+    if (allVersions && !quotationNumber) {
+      return NextResponse.json(
+        { error: "查詢歷史版本時，必須提供報價單號" },
+        { status: 400 }
+      );
+    }
+
     const whereClause: any = {};
 
     if (!allVersions) {
