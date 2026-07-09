@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
 import { calculateQuotation } from "@/lib/calculator";
+import { signOut } from "next-auth/react";
 
 interface Vendor {
   id: string;
@@ -243,6 +244,18 @@ export default function DashboardPage() {
             >
               🗄️ 資料庫
             </Link>
+            <Link
+              href="/users"
+              className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
+            >
+              人員管理
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="inline-flex justify-center items-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-500 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
+            >
+              登出
+            </button>
           </div>
         </div>
 

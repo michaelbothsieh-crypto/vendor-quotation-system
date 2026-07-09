@@ -71,3 +71,13 @@ model SystemSetting {
   key   String @unique
   value String
 }
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("USER") // ADMIN | USER
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

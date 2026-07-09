@@ -1,8 +1,27 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // 建立預設管理員帳號（僅在無使用者時建立）
+  console.log('檢查是否需要建立預設管理員帳號...');
+  const userCount = await prisma.user.count();
+  if (userCount === 0) {
+    const passwordHash = await bcrypt.hash('REDACTED', 10);
+    const admin = await prisma.user.create({
+      data: {
+        email: 'admin@example.com',
+        passwordHash,
+        name: '系統管理員',
+        role: 'ADMIN',
+      },
+    });
+    console.log(`已建立預設管理員帳號: ${admin.email} / 密碼: REDACTED（請登入後立即修改）`);
+  } else {
+    console.log('已存在使用者帳號，略過預設管理員建立。');
+  }
+
   // 寫入系統預設費率
   const settings = [
     { key: 'DEFAULT_RD_RATE', value: '8000' },
