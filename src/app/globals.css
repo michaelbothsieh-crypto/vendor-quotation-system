@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -12,15 +14,72 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+  深色模式：不逐一改每個頁面的 className，改用全域覆寫最常用的 Tailwind
+  色板 class（bg-white / bg-slate-50 / text-slate-xxx / border-slate-xxx...），
+  由根元素的 .dark class 觸發（見 ThemeToggle 元件與 layout.tsx 的初始化 script）。
+*/
+.dark {
+  --background: #0b1220;
+  --foreground: #e2e8f0;
+}
+
+.dark body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.dark .bg-white { background-color: #151b2b; }
+.dark .bg-slate-50 { background-color: #0f1420; }
+.dark .bg-slate-50\/50 { background-color: rgb(15 20 32 / 0.5); }
+.dark .bg-slate-50\/30 { background-color: rgb(15 20 32 / 0.3); }
+.dark .bg-indigo-50 { background-color: rgb(99 102 241 / 0.12); }
+.dark .bg-indigo-100 { background-color: rgb(99 102 241 / 0.18); }
+.dark .bg-indigo-50\/30 { background-color: rgb(99 102 241 / 0.08); }
+.dark .bg-red-50 { background-color: rgb(244 63 94 / 0.1); }
+.dark .bg-red-100 { background-color: rgb(244 63 94 / 0.16); }
+.dark .bg-rose-50 { background-color: rgb(244 63 94 / 0.1); }
+.dark .bg-amber-50 { background-color: rgb(245 158 11 / 0.12); }
+.dark .bg-emerald-50 { background-color: rgb(16 185 129 / 0.12); }
+.dark .bg-violet-100 { background-color: rgb(139 92 246 / 0.18); }
+
+.dark .text-slate-900 { color: #f1f5f9; }
+.dark .text-slate-800 { color: #e2e8f0; }
+.dark .text-slate-750 { color: #e2e8f0; }
+.dark .text-slate-700 { color: #cbd5e1; }
+.dark .text-slate-650 { color: #cbd5e1; }
+.dark .text-slate-600 { color: #94a3b8; }
+.dark .text-slate-500 { color: #94a3b8; }
+.dark .text-slate-400 { color: #64748b; }
+.dark .text-indigo-600 { color: #a5b4fc; }
+.dark .text-indigo-650 { color: #a5b4fc; }
+.dark .text-indigo-700 { color: #a5b4fc; }
+.dark .text-indigo-750 { color: #a5b4fc; }
+.dark .text-red-600,
+.dark .text-red-650,
+.dark .text-red-700,
+.dark .text-rose-600 { color: #fda4af; }
+.dark .text-emerald-700 { color: #6ee7b7; }
+.dark .text-amber-700 { color: #fcd34d; }
+.dark .text-violet-700 { color: #c4b5fd; }
+
+.dark .border-slate-100,
+.dark .border-slate-200,
+.dark .border-slate-300 { border-color: #1e293b; }
+.dark .border-slate-200\/80 { border-color: rgb(30 41 59 / 0.8); }
+.dark .border-slate-200\/60 { border-color: rgb(30 41 59 / 0.6); }
+.dark .border-indigo-100,
+.dark .border-indigo-100\/50,
+.dark .border-indigo-200 { border-color: rgb(99 102 241 / 0.3); }
+.dark .border-red-200\/80,
+.dark .border-rose-100 { border-color: rgb(244 63 94 / 0.3); }
+
+.dark .placeholder-slate-400::placeholder { color: #64748b; }
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1e293b; }

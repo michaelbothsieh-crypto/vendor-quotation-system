@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./print.css";
+import ThemeToggle from "@/components/ThemeToggle";
+
+const THEME_INIT_SCRIPT = `
+(function () {
+  var stored = localStorage.getItem("theme");
+  var dark = stored === "dark" || (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.classList.toggle("dark", dark);
+})();
+`;
 
 
 const geistSans = Geist({
@@ -28,8 +37,15 @@ export default function RootLayout({
     <html
       lang="zh-TW"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        {children}
+        <ThemeToggle />
+      </body>
     </html>
   );
 }
