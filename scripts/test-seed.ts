@@ -73,7 +73,12 @@ async function verifySeed() {
 
   // 3. 驗證示範報價單資料
   const demoQuotation = await prisma.quotation.findUnique({
-    where: { quotationNumber: 'Q-DEMO-001' },
+    where: {
+      quotationNumber_version: {
+        quotationNumber: 'Q-DEMO-001',
+        version: 1,
+      }
+    },
     include: { categories: { include: { items: true } } },
   });
 

@@ -22,7 +22,7 @@ model Vendor {
 
 model Quotation {
   id                String              @id @default(uuid())
-  quotationNumber   String              @unique
+  quotationNumber   String
   title             String
   vendorId          String
   vendor            Vendor              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
@@ -40,6 +40,8 @@ model Quotation {
   categories        QuotationCategory[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+
+  @@unique([quotationNumber, version])
 }
 
 model QuotationCategory {

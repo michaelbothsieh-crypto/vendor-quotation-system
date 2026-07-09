@@ -48,7 +48,12 @@ async function main() {
   // 建立一筆測試用的示範報價單資料 (Quotation)
   console.log('開始植入示範報價單資料...');
   const quotation = await prisma.quotation.upsert({
-    where: { quotationNumber: 'Q-DEMO-001' },
+    where: {
+      quotationNumber_version: {
+        quotationNumber: 'Q-DEMO-001',
+        version: 1,
+      }
+    },
     update: {
       title: '示範報價專案',
       vendorId: vendor.id,

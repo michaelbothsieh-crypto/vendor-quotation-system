@@ -39,7 +39,7 @@ export async function GET(
   }
 }
 
-// 更新指定報價單：在 Prisma 交易中先刪除舊的 categories，再根據傳入的新結構重新 create
+// 更新指定報價單：改為「非原地更新」的版本控制機制，建立新版本並將舊版本設為封存
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -91,23 +91,39 @@ export async function PUT(
       }
     }
 
-    const updatedQuotation = await db.$transaction(async (tx) => {
-      // 1. 先刪除該報價單舊的 categories（Prisma 會級聯 Cascade 刪除 items）
-      await tx.quotationCategory.deleteMany({
-        where: { quotationId: id },
+    // 讀取原報價單與其版本號
+    const parent = await db.quotation.findUnique({
+      where: { id },
+    });
+    if (!parent) {
+      return NextResponse.json(
+        { error: "找不到該報價單資料" },
+        { status: 404 }
+      );
+    }
+
+    const newQuotation = await db.$transaction(async (tx) => {
+      // 1. 將父報價單設為非最新版且已封存
+      await tx.quotation.update({
+        where: { id },
+        data: { isLatest: false, status: "ARCHIVED" }
       });
 
-      // 2. 更新報價單主表欄位，並重建大項與細項
-      return await tx.quotation.update({
-        where: { id },
+      // 2. 建立新一版報價單
+      return await tx.quotation.create({
         data: {
+          quotationNumber: parent.quotationNumber,
           title,
           vendorId,
-          taxRate: parseFloat(taxRate ?? 0.05),
-          rdRate: parseInt(rdRate ?? 8000, 10),
-          pmRate: parseInt(pmRate ?? 6000, 10),
-          qcRate: parseInt(qcRate ?? 5000, 10),
-          integrationRate: parseInt(integrationRate ?? 6500, 10),
+          status: "DRAFT",
+          taxRate: parseFloat(taxRate ?? parent.taxRate),
+          rdRate: parseInt(rdRate ?? parent.rdRate, 10),
+          pmRate: parseInt(pmRate ?? parent.pmRate, 10),
+          qcRate: parseInt(qcRate ?? parent.qcRate, 10),
+          integrationRate: parseInt(integrationRate ?? parent.integrationRate, 10),
+          version: parent.version + 1,
+          isLatest: true,
+          parentQuotationId: parent.id,
           categories: {
             create: (categories ?? []).map((cat: any, catIndex: number) => ({
               name: cat.name,
@@ -139,7 +155,7 @@ export async function PUT(
       });
     });
 
-    return NextResponse.json(updatedQuotation);
+    return NextResponse.json(newQuotation);
   } catch (error: any) {
     return NextResponse.json(
       { error: `更新報價單失敗：${error.message}` },

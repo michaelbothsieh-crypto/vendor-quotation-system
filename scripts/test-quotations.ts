@@ -11,6 +11,7 @@ async function runTest() {
 
   let testVendor: any = null;
   let testQuotationId: string = "";
+  let testQuotationV1Id: string = "";
 
   try {
     // 1. 建立測試廠商以供關聯
@@ -162,8 +163,12 @@ async function runTest() {
     if (updated.title !== putPayload.title) throw new Error("更新後專案名稱不符");
     if (updated.rdRate !== 9000) throw new Error("更新後費率不符");
     if (updated.categories.length !== 2) throw new Error("更新後大項數量錯誤");
-    if (updated.version !== 1) throw new Error("更新後預設版本應為 1");
+    if (updated.version !== 2) throw new Error("更新後版本應為 2");
     if (updated.isLatest !== true) throw new Error("更新後預設 isLatest 應為 true");
+
+    // 將 testQuotationId 指向更新後的 v2，以便後續的刪除與清理能正確作用在 v2 上，並保留 v1 ID 用於最後清理
+    testQuotationV1Id = testQuotationId;
+    testQuotationId = updated.id;
 
     // 6. 測試刪除報價單 (DELETE /[id])
     console.log("\n6. 測試刪除報價單 (DELETE /[id])...");
@@ -198,6 +203,9 @@ async function runTest() {
     console.log("\n8. 清理測試資料...");
     if (testQuotationId) {
       await db.quotation.deleteMany({ where: { id: testQuotationId } }).catch(() => {});
+    }
+    if (testQuotationV1Id) {
+      await db.quotation.deleteMany({ where: { id: testQuotationV1Id } }).catch(() => {});
     }
     if (testVendor) {
       await db.vendor.delete({ where: { id: testVendor.id } }).catch(() => {});

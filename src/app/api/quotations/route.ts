@@ -3,10 +3,29 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-// 取得所有報價單列表，包含廠商關聯資料，依建立時間倒序排列
-export async function GET() {
+// 取得所有報價單列表，包含廠商關聯資料
+export async function GET(request?: Request) {
   try {
+    let allVersions = false;
+    let quotationNumber: string | null = null;
+
+    if (request) {
+      const { searchParams } = new URL(request.url);
+      allVersions = searchParams.get("allVersions") === "true";
+      quotationNumber = searchParams.get("quotationNumber");
+    }
+
+    const whereClause: any = {};
+
+    if (!allVersions) {
+      whereClause.isLatest = true;
+    }
+    if (quotationNumber) {
+      whereClause.quotationNumber = quotationNumber;
+    }
+
     const quotations = await db.quotation.findMany({
+      where: whereClause,
       include: {
         vendor: true,
         categories: {
@@ -18,9 +37,9 @@ export async function GET() {
           },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: allVersions && quotationNumber
+        ? { version: "desc" }
+        : { createdAt: "desc" },
     });
     return NextResponse.json(quotations);
   } catch (error: any) {
@@ -95,25 +114,30 @@ export async function POST(request: Request) {
 
     // 透過交易確保單號產生與資料寫入的原子性
     const newQuotation = await db.$transaction(async (tx) => {
-      // 搜尋當天最大單號
-      const lastQuotation = await tx.quotation.findFirst({
+      // 搜尋當天所有報價單，並在記憶體中找出最大序號，以避免非數字單號或髒資料造成的 NaN 問題
+      const dailyQuotations = await tx.quotation.findMany({
         where: {
           quotationNumber: {
             startsWith: prefix,
           },
         },
-        orderBy: {
-          quotationNumber: "desc",
+        select: {
+          quotationNumber: true,
         },
       });
 
       let nextSeq = 1;
-      if (lastQuotation) {
-        const lastParts = lastQuotation.quotationNumber.split("-");
-        const seqStr = lastParts[lastParts.length - 1];
-        const seq = parseInt(seqStr, 10);
-        if (!isNaN(seq)) {
-          nextSeq = seq + 1;
+      if (dailyQuotations.length > 0) {
+        const seqs = dailyQuotations
+          .map((q) => {
+            const parts = q.quotationNumber.split("-");
+            const seqStr = parts[parts.length - 1];
+            return parseInt(seqStr, 10);
+          })
+          .filter((seq) => !isNaN(seq));
+
+        if (seqs.length > 0) {
+          nextSeq = Math.max(...seqs) + 1;
         }
       }
       const nextSeqStr = String(nextSeq).padStart(3, "0");
