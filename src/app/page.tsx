@@ -197,20 +197,9 @@ export default function DashboardPage() {
       {/* 頂部裝飾條 */}
       <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
-        
-        {/* 全域成功通知 */}
-        {successMessage && (
-          <div className="fixed bottom-5 right-5 z-50 transform translate-y-0 opacity-100 transition-all duration-300">
-            <div className="bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 border border-slate-800">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <p className="text-sm font-medium">{successMessage}</p>
-            </div>
-          </div>
-        )}
-
-        {/* 標題與簡介 */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10 border-b border-slate-200/60 pb-8">
+      {/* 頂部導覽：sticky，捲動時保留在畫面上，只有下方內容區塊會捲動 */}
+      <header className="sticky top-0 z-30 bg-white border-b border-slate-200/60 px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold tracking-wide mb-3">
               <span className="h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
@@ -266,6 +255,19 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+      </header>
+
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
+
+        {/* 全域成功通知 */}
+        {successMessage && (
+          <div className="fixed bottom-5 right-5 z-50 transform translate-y-0 opacity-100 transition-all duration-300">
+            <div className="bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 border border-slate-800">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <p className="text-sm font-medium">{successMessage}</p>
+            </div>
+          </div>
+        )}
 
         {/* 搜尋列 */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">

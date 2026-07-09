@@ -133,17 +133,8 @@ export default function UsersPage() {
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
       <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
 
-      <main className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
-        {successMessage && (
-          <div className="fixed bottom-5 right-5 z-50">
-            <div className="bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 border border-slate-800">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <p className="text-sm font-medium">{successMessage}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between mb-8 border-b border-slate-200/60 pb-6">
+      <header className="sticky top-0 z-30 bg-white border-b border-slate-200/60 px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-5xl mx-auto w-full flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-extrabold text-slate-900">人員管理</h1>
             <p className="text-slate-500 text-sm mt-1">管理可登入系統的帳號與權限</p>
@@ -155,6 +146,17 @@ export default function UsersPage() {
             返回首頁
           </Link>
         </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
+        {successMessage && (
+          <div className="fixed bottom-5 right-5 z-50">
+            <div className="bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 border border-slate-800">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <p className="text-sm font-medium">{successMessage}</p>
+            </div>
+          </div>
+        )}
 
         {/* 表單 */}
         <form

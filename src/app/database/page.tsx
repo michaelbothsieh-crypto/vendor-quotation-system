@@ -88,7 +88,7 @@ export default function DatabasePage() {
       <div className="h-1 w-full bg-gradient-to-r from-emerald-500 via-cyan-500 to-blue-500"></div>
 
       {/* Header */}
-      <header className="bg-slate-900 border-b border-slate-800 py-4 px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <header className="sticky top-0 z-30 bg-slate-900 border-b border-slate-800 py-4 px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-emerald-400 text-xs font-mono font-bold tracking-wider">
