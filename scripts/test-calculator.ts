@@ -1,78 +1,47 @@
-import { roundToOneDecimal, calculateItem, calculateQuotation } from "../src/lib/calculator";
+/**
+ * 計算核心自我檢查：npx tsx scripts/test-calculator.ts
+ * 驗證動態角色的浮點精度、折扣與稅額計算。
+ */
+import { calculateItem, calculateQuotation, parseRoles } from "../src/lib/calculator";
+import assert from "node:assert";
 
-function assert(condition: boolean, message: string) {
-  if (!condition) {
-    throw new Error(`Assertion failed: ${message}`);
-  }
-}
+const roles = parseRoles([
+  { key: "rd", label: "RD", rate: 8000 },
+  { key: "pm", label: "PM", rate: 6000 },
+  { key: "qc", label: "QC", rate: 5000 },
+  { key: "integration", label: "整合", rate: 6500 },
+]);
 
-async function runTests() {
-  console.log("開始執行計算模組測試...");
+// 單一細項：0.1 + 0.2 系列的浮點陷阱
+const item = { days: { rd: 1.5, pm: 0.5, qc: 0.3, integration: 0.1 } };
+const calc = calculateItem(item, roles);
+assert.strictEqual(calc.totalDays, 2.4, `totalDays 應為 2.4，實得 ${calc.totalDays}`);
+// 1.5*8000 + 0.5*6000 + 0.3*5000 + 0.1*6500 = 12000+3000+1500+650 = 17150
+assert.strictEqual(calc.amount, 17150, `amount 應為 17150，實得 ${calc.amount}`);
 
-  // 1. 測試四捨五入到小數點第一位
-  assert(roundToOneDecimal(0.1 + 0.2) === 0.3, "0.1 + 0.2 應為 0.3");
-  assert(roundToOneDecimal(1.005) === 1.0, "1.005 應為 1.0 (或依據精度需求調整)");
-  assert(roundToOneDecimal(1.05) === 1.1, "1.05 應為 1.1");
-  assert(roundToOneDecimal(1.04) === 1.0, "1.04 應為 1.0");
+// 整張報價單：多筆 0.1/0.2 累加不得出現浮點誤差
+const items = [
+  { days: { rd: 1.1, pm: 0.1, qc: 0.1, integration: 0.1 } },
+  { days: { rd: 0.2, pm: 0.2, qc: 0.2, integration: 0.2 } },
+  { days: { rd: 0.7, pm: 0.2, qc: 0.2, integration: 0.2 } },
+];
+const summary = calculateQuotation(items, roles, 0.05, 1000);
+assert.strictEqual(summary.perRole[0].totalDays, 2, `RD 總天數應為 2，實得 ${summary.perRole[0].totalDays}`);
+assert.strictEqual(summary.totalDays, 3.5, `總天數應為 3.5，實得 ${summary.totalDays}`);
+// subtotal = 2*8000 + 0.5*6000 + 0.5*5000 + 0.5*6500 = 16000+3000+2500+3250 = 24750
+assert.strictEqual(summary.subtotal, 24750, `未稅小計應為 24750，實得 ${summary.subtotal}`);
+assert.strictEqual(summary.discount, 1000);
+assert.strictEqual(summary.taxable, 23750);
+assert.strictEqual(summary.tax, 1188, `稅額應為 1188，實得 ${summary.tax}`);
+assert.strictEqual(summary.total, 24938);
 
-  // 2. 測試單一品項計算
-  const rates = {
-    rdRate: 8000,
-    pmRate: 6000,
-    qcRate: 5000,
-    integrationRate: 6500,
-  };
+// 折扣不可超過小計
+const overDiscount = calculateQuotation(items, roles, 0.05, 999999);
+assert.strictEqual(overDiscount.taxable, 0);
+assert.strictEqual(overDiscount.total, 0);
 
-  const item1 = {
-    rdDays: 1.5,
-    pmDays: 0.5,
-    qcDays: 0.2,
-    integrationDays: 0.1,
-  };
-  // 金額 = 1.5 * 8000 + 0.5 * 6000 + 0.2 * 5000 + 0.1 * 6500 = 12000 + 3000 + 1000 + 650 = 16650
-  // 天數 = 1.5 + 0.5 + 0.2 + 0.1 = 2.3
-  const calc1 = calculateItem(item1, rates);
-  assert(calc1.totalDays === 2.3, `item1 總天數應為 2.3，實際為 ${calc1.totalDays}`);
-  assert(calc1.amount === 16650, `item1 金額應為 16650，實際為 ${calc1.amount}`);
+// 未知角色 key 的工時不列入計算
+const strayItem = { days: { rd: 1, ghost: 99 } };
+assert.strictEqual(calculateItem(strayItem, roles).amount, 8000);
 
-  // 3. 測試整張報價單計算 (包含浮點數累計誤差防範)
-  const items = [
-    { rdDays: 1.1, pmDays: 0.1, qcDays: 0.1, integrationDays: 0.1 },
-    { rdDays: 0.2, pmDays: 0.2, qcDays: 0.2, integrationDays: 0.2 },
-    { rdDays: 0.7, pmDays: 0.2, qcDays: 0.2, integrationDays: 0.2 },
-  ];
-  // 總天數:
-  // RD = 1.1 + 0.2 + 0.7 = 2.0
-  // PM = 0.1 + 0.2 + 0.2 = 0.5
-  // QC = 0.1 + 0.2 + 0.2 = 0.5
-  // INT = 0.1 + 0.2 + 0.2 = 0.5
-  // 總天數 = 3.5
-  
-  // 各自品項金額:
-  // item1 = 1.1*8000 + 0.1*6000 + 0.1*5000 + 0.1*6500 = 8800 + 600 + 500 + 650 = 10550
-  // item2 = 0.2*8000 + 0.2*6000 + 0.2*5000 + 0.2*6500 = 1600 + 1200 + 1000 + 1300 = 5100
-  // item3 = 0.7*8000 + 0.2*6000 + 0.2*5000 + 0.2*6500 = 5600 + 1200 + 1000 + 1300 = 9100
-  // 未稅總額 = 10550 + 5100 + 9100 = 24750
-  // 稅金 (5%) = 24750 * 0.05 = 1237.5 -> 四捨五入 = 1238
-  // 含稅總額 = 24750 + 1238 = 25988
-  const quotationCalc = calculateQuotation(items, rates, 0.05);
-  assert(quotationCalc.totalRdDays === 2.0, `RD 天數加總應為 2.0，實際為 ${quotationCalc.totalRdDays}`);
-  assert(quotationCalc.totalPmDays === 0.5, `PM 天數加總應為 0.5，實際為 ${quotationCalc.totalPmDays}`);
-  assert(quotationCalc.totalQcDays === 0.5, `QC 天數加總應為 0.5，實際為 ${quotationCalc.totalQcDays}`);
-  assert(quotationCalc.totalIntegrationDays === 0.5, `Integration 天數加總應為 0.5，實際為 ${quotationCalc.totalIntegrationDays}`);
-  assert(quotationCalc.totalDays === 3.5, `總天數加總應為 3.5，實際為 ${quotationCalc.totalDays}`);
-  assert(quotationCalc.totalRdAmount === 16000, `RD 金額應為 16000，實際為 ${quotationCalc.totalRdAmount}`);
-  assert(quotationCalc.totalPmAmount === 3000, `PM 金額應為 3000，實際為 ${quotationCalc.totalPmAmount}`);
-  assert(quotationCalc.totalQcAmount === 2500, `QC 金額應為 2500，實際為 ${quotationCalc.totalQcAmount}`);
-  assert(quotationCalc.totalIntegrationAmount === 3250, `Integration 金額應為 3250，實際為 ${quotationCalc.totalIntegrationAmount}`);
-  assert(quotationCalc.subtotal === 24750, `未稅金額應為 24750，實際為 ${quotationCalc.subtotal}`);
-  assert(quotationCalc.tax === 1238, `稅金應為 1238，實際為 ${quotationCalc.tax}`);
-  assert(quotationCalc.total === 25988, `含稅總額應為 25988，實際為 ${quotationCalc.total}`);
-
-  console.log("✅ 所有計算模組測試通過！");
-}
-
-runTests().catch((err) => {
-  console.error("❌ 測試失敗:", err);
-  process.exit(1);
-});
+console.log("✅ calculator 全部自我檢查通過");

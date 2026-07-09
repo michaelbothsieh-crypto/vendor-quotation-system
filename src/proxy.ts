@@ -20,7 +20,7 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (pathname.startsWith("/users") && !isAdmin(role)) {
+  if ((pathname.startsWith("/users") || pathname.startsWith("/templates")) && !isAdmin(role)) {
     if (pathname.startsWith("/api")) {
       return NextResponse.json({ error: "權限不足" }, { status: 403 });
     }

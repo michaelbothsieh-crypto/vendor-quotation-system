@@ -5,7 +5,7 @@ import Link from "next/link";
 
 interface DatabaseSnapshot {
   vendors: any[];
-  systemSettings: any[];
+  quoteTemplates: any[];
   quotations: any[];
   quotationCategories: any[];
   quotationItems: any[];
@@ -16,7 +16,7 @@ const TABLE_LABELS: Record<keyof DatabaseSnapshot, string> = {
   vendors: "🏢 廠商 (Vendors)",
   quotationCategories: "📁 大項 (Categories)",
   quotationItems: "📝 細項 (Items)",
-  systemSettings: "⚙️ 系統設定 (SystemSettings)",
+  quoteTemplates: "🧩 報價範本 (QuoteTemplates)",
 };
 
 type TableKey = keyof DatabaseSnapshot;

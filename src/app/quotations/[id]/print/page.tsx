@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use, Fragment } from "react";
 import Link from "next/link";
-import { calculateQuotation, calculateItem } from "@/lib/calculator";
+import { calculateQuotation, calculateItem, parseRoles } from "@/lib/calculator";
 
 interface PrintPageProps {
   params: Promise<{ id: string }>;
@@ -62,15 +62,20 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
     );
   }
 
-  // 整理計算資料
+  // 整理計算資料（角色定義來自報價單自身快照）
+  const roles = parseRoles(quotation.roles);
   const allItems = quotation.categories.flatMap((cat: any) => cat.items);
-  const rates = {
-    rdRate: quotation.rdRate,
-    pmRate: quotation.pmRate,
-    qcRate: quotation.qcRate,
-    integrationRate: quotation.integrationRate,
+  const summary = calculateQuotation(allItems, roles, quotation.taxRate, quotation.discount);
+
+  // 客戶抬頭讀報價單快照（廠商資料後續異動不影響已開立的報價單），舊資料退回關聯值
+  const client = {
+    name: quotation.vendorName || quotation.vendor?.name || "",
+    taxId: quotation.vendorTaxId ?? quotation.vendor?.taxId,
+    contactName: quotation.vendorContactName || quotation.vendor?.contactName || "",
+    contactEmail: quotation.vendorContactEmail || quotation.vendor?.contactEmail || "",
+    contactPhone: quotation.vendorContactPhone ?? quotation.vendor?.contactPhone,
+    address: quotation.vendorAddress ?? quotation.vendor?.address,
   };
-  const summary = calculateQuotation(allItems, rates, quotation.taxRate);
 
   // 用於表格序號
   let itemIndexCounter = 0;
@@ -84,6 +89,10 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
     email: "billing@antigravity.tw",
     address: "台北市信義區信義路五段 7 號",
   };
+
+  const taxPercent = Math.round(quotation.taxRate * 100);
+  const formatDate = (value: string | null | undefined) =>
+    value ? new Date(value).toLocaleDateString("zh-TW") : null;
 
   const handlePrint = () => {
     window.print();
@@ -107,7 +116,7 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
-            編輯此報價單
+            檢視/編輯此報價單
           </Link>
         </div>
         <button
@@ -123,7 +132,7 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
 
       {/* 報價單列印主體 */}
       <main className="max-w-4xl mx-auto bg-white p-12 border border-slate-200 shadow-lg rounded-3xl print:border-none print:shadow-none print:p-0 print:rounded-none">
-        
+
         {/* 頁首標題 */}
         <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
@@ -141,8 +150,14 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
             </p>
             <p className="text-slate-500">
               <span className="font-semibold text-slate-700">報價日期：</span>
-              {new Date(quotation.createdAt).toLocaleDateString("zh-TW")}
+              {formatDate(quotation.issueDate) ?? formatDate(quotation.createdAt)}
             </p>
+            {quotation.validUntil && (
+              <p className="text-slate-500">
+                <span className="font-semibold text-slate-700">有效期限：</span>
+                {formatDate(quotation.validUntil)}
+              </p>
+            )}
           </div>
         </div>
 
@@ -152,31 +167,31 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
           <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 print:bg-transparent print:p-0 print:border-none">
             <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">客戶抬頭</h2>
             <div className="space-y-2 text-sm text-slate-800">
-              <p className="text-base font-bold text-slate-950">{quotation.vendor.name}</p>
-              {quotation.vendor.taxId && (
+              <p className="text-base font-bold text-slate-950">{client.name}</p>
+              {client.taxId && (
                 <p>
                   <span className="text-slate-400 font-medium">統一編號：</span>
-                  {quotation.vendor.taxId}
+                  {client.taxId}
                 </p>
               )}
               <p>
                 <span className="text-slate-400 font-medium">聯絡窗口：</span>
-                {quotation.vendor.contactName}
+                {client.contactName}
               </p>
               <p>
                 <span className="text-slate-400 font-medium">聯絡信箱：</span>
-                <span className="font-mono">{quotation.vendor.contactEmail}</span>
+                <span className="font-mono">{client.contactEmail}</span>
               </p>
-              {quotation.vendor.contactPhone && (
+              {client.contactPhone && (
                 <p>
                   <span className="text-slate-400 font-medium">聯絡電話：</span>
-                  {quotation.vendor.contactPhone}
+                  {client.contactPhone}
                 </p>
               )}
-              {quotation.vendor.address && (
+              {client.address && (
                 <p>
                   <span className="text-slate-400 font-medium">聯絡地址：</span>
-                  {quotation.vendor.address}
+                  {client.address}
                 </p>
               )}
             </div>
@@ -228,10 +243,11 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
                 <tr className="bg-slate-100 text-slate-700 border-b border-slate-300">
                   <th className="py-2.5 px-3 font-semibold text-center w-12">項次</th>
                   <th className="py-2.5 px-3 font-semibold">功能項目與描述</th>
-                  <th className="py-2.5 px-3 font-semibold text-right w-16">RD (天)</th>
-                  <th className="py-2.5 px-3 font-semibold text-right w-16">PM (天)</th>
-                  <th className="py-2.5 px-3 font-semibold text-right w-16">QC (天)</th>
-                  <th className="py-2.5 px-3 font-semibold text-right w-16">整合 (天)</th>
+                  {roles.map((role: any) => (
+                    <th key={role.key} className="py-2.5 px-3 font-semibold text-right w-16">
+                      {role.label} (天)
+                    </th>
+                  ))}
                   <th className="py-2.5 px-3 font-semibold text-right w-24">小計金額</th>
                   <th className="py-2.5 px-3 font-semibold max-w-[120px]">備註</th>
                 </tr>
@@ -240,21 +256,22 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
                 {quotation.categories.map((cat: any) => (
                   <Fragment key={cat.id}>
                     <tr className="border-b border-slate-200">
-                      <td colSpan={8} className="py-2 px-3 bg-indigo-50/50 font-bold text-indigo-900 print:bg-slate-100">
+                      <td colSpan={roles.length + 4} className="py-2 px-3 bg-indigo-50/50 font-bold text-indigo-900 print:bg-slate-100">
                         大項：{cat.name}
                       </td>
                     </tr>
                     {cat.items.map((item: any) => {
                       itemIndexCounter++;
-                      const calculatedItem = calculateItem(item, rates);
+                      const calculatedItem = calculateItem(item, roles);
                       return (
                         <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/50">
                           <td className="py-2 px-3 text-slate-500 text-center font-mono text-xs">{itemIndexCounter}</td>
                           <td className="py-2 px-3 text-slate-900 font-medium">{item.description}</td>
-                          <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.rdDays) || 0}</td>
-                          <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.pmDays) || 0}</td>
-                          <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.qcDays) || 0}</td>
-                          <td className="py-2 px-3 text-slate-700 text-right font-mono">{Number(item.integrationDays) || 0}</td>
+                          {roles.map((role: any) => (
+                            <td key={role.key} className="py-2 px-3 text-slate-700 text-right font-mono">
+                              {Number(item.days?.[role.key]) || 0}
+                            </td>
+                          ))}
                           <td className="py-2 px-3 text-slate-900 text-right font-mono font-semibold">
                             ${calculatedItem.amount.toLocaleString()}
                           </td>
@@ -274,7 +291,7 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
         {/* 角色天數加總與費率明細 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 border-t border-slate-200 pt-8 print:grid-cols-2 print:gap-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 mb-3">研發與專案角色工時費率明細</h3>
+            <h3 className="text-sm font-bold text-slate-900 mb-3">專案角色工時費率明細</h3>
             <table className="w-full text-xs text-left border border-slate-200">
               <thead>
                 <tr className="bg-slate-50 text-slate-600 border-b border-slate-200">
@@ -285,30 +302,14 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-mono">
-                <tr>
-                  <td className="p-2 font-sans">RD (研發工程師)</td>
-                  <td className="p-2 text-right">{summary.totalRdDays}</td>
-                  <td className="p-2 text-right">${rates.rdRate?.toLocaleString()}</td>
-                  <td className="p-2 text-right">${summary.totalRdAmount.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td className="p-2 font-sans">PM (專案經理)</td>
-                  <td className="p-2 text-right">{summary.totalPmDays}</td>
-                  <td className="p-2 text-right">${rates.pmRate?.toLocaleString()}</td>
-                  <td className="p-2 text-right">${summary.totalPmAmount.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td className="p-2 font-sans">QC (測試工程師)</td>
-                  <td className="p-2 text-right">{summary.totalQcDays}</td>
-                  <td className="p-2 text-right">${rates.qcRate?.toLocaleString()}</td>
-                  <td className="p-2 text-right">${summary.totalQcAmount.toLocaleString()}</td>
-                </tr>
-                <tr>
-                  <td className="p-2 font-sans">整合 (系統整合工程師)</td>
-                  <td className="p-2 text-right">{summary.totalIntegrationDays}</td>
-                  <td className="p-2 text-right">${rates.integrationRate?.toLocaleString()}</td>
-                  <td className="p-2 text-right">${summary.totalIntegrationAmount.toLocaleString()}</td>
-                </tr>
+                {summary.perRole.map((role) => (
+                  <tr key={role.key}>
+                    <td className="p-2 font-sans">{role.label}</td>
+                    <td className="p-2 text-right">{role.totalDays}</td>
+                    <td className="p-2 text-right">${role.rate.toLocaleString()}</td>
+                    <td className="p-2 text-right">${role.amount.toLocaleString()}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -324,8 +325,14 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
                 <span className="font-sans text-slate-500">未稅金額總計：</span>
                 <span className="font-semibold text-slate-900">${summary.subtotal.toLocaleString()}</span>
               </div>
+              {summary.discount > 0 && (
+                <div className="flex justify-between">
+                  <span className="font-sans text-slate-500">整單折扣：</span>
+                  <span className="font-semibold text-rose-600">-${summary.discount.toLocaleString()}</span>
+                </div>
+              )}
               <div className="flex justify-between">
-                <span className="font-sans text-slate-500">營業稅 (5%)：</span>
+                <span className="font-sans text-slate-500">營業稅 ({taxPercent}%)：</span>
                 <span className="font-semibold text-slate-900">${summary.tax.toLocaleString()}</span>
               </div>
               <div className="border-t border-slate-200 my-2 pt-2 flex justify-between items-baseline">
@@ -336,13 +343,31 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
           </div>
         </div>
 
+        {/* 付款條件與條款備註 */}
+        {(quotation.paymentTerms || quotation.notes) && (
+          <div className="mb-8 p-5 rounded-xl border border-slate-200 bg-slate-50/50 print:bg-transparent space-y-2 text-sm">
+            {quotation.paymentTerms && (
+              <p>
+                <span className="font-bold text-slate-900 mr-2">付款條件：</span>
+                <span className="text-slate-700">{quotation.paymentTerms}</span>
+              </p>
+            )}
+            {quotation.notes && (
+              <p>
+                <span className="font-bold text-slate-900 mr-2">條款備註：</span>
+                <span className="text-slate-700 whitespace-pre-line">{quotation.notes}</span>
+              </p>
+            )}
+          </div>
+        )}
+
         {/* 雙方簽章區 */}
         <div className="mt-16 pt-8 border-t border-slate-200">
           <div className="grid grid-cols-2 gap-12 print:gap-8">
             <div className="flex flex-col gap-12">
               <div>
                 <p className="text-sm font-bold text-slate-900">客戶簽認 (委託方)：</p>
-                <p className="text-xs text-slate-400 mt-1">{quotation.vendor.name}</p>
+                <p className="text-xs text-slate-400 mt-1">{client.name}</p>
               </div>
               <div className="border-b border-slate-450 h-8 w-full max-w-[280px]"></div>
               <div className="text-xs text-slate-500 space-y-1 font-mono">
@@ -350,7 +375,7 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
                 <p>簽署日期：20___ 年 ___ 月 ___ 日</p>
               </div>
             </div>
-            
+
             <div className="flex flex-col gap-12">
               <div>
                 <p className="text-sm font-bold text-slate-900">我方簽認 (受託方)：</p>

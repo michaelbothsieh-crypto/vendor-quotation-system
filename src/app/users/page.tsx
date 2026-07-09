@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
+import { useUI } from "@/components/ui";
 
 interface User {
   id: string;
@@ -15,6 +16,7 @@ interface User {
 const EMPTY_USER_FORM = { email: "", password: "", name: "", role: "VIEWER" };
 
 export default function UsersPage() {
+  const { toast, confirm } = useUI();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +119,13 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (id: string, label: string) => {
-    if (!window.confirm(`確定要刪除人員「${label}」嗎？`)) return;
+    const ok = await confirm({
+      title: `刪除人員「${label}」？`,
+      message: "刪除後該帳號將無法登入，此動作無法還原。",
+      confirmLabel: "刪除",
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const res = await fetch(`/api/users/${id}`, { method: "DELETE" });
       const data = await res.json();
@@ -125,7 +133,7 @@ export default function UsersPage() {
       setSuccessMessage(`已刪除人員「${label}」`);
       fetchUsers();
     } catch (err: any) {
-      alert(err.message);
+      toast(err.message, "error");
     }
   };
 

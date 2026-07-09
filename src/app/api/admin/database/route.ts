@@ -5,9 +5,9 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const [vendors, systemSettings, quotations, quotationCategories, quotationItems] = await Promise.all([
+    const [vendors, quoteTemplates, quotations, quotationCategories, quotationItems] = await Promise.all([
       db.vendor.findMany(),
-      db.systemSetting.findMany(),
+      db.quoteTemplate.findMany(),
       db.quotation.findMany(),
       db.quotationCategory.findMany(),
       db.quotationItem.findMany(),
@@ -15,7 +15,7 @@ export async function GET() {
 
     return NextResponse.json({
       vendors,
-      systemSettings,
+      quoteTemplates,
       quotations,
       quotationCategories,
       quotationItems,

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
-import { calculateQuotation } from "@/lib/calculator";
+import { calculateQuotation, parseRoles } from "@/lib/calculator";
 import { useSession } from "next-auth/react";
-import { canEdit } from "@/lib/permissions";
+import { canCreate, canEdit } from "@/lib/permissions";
+import { useUI } from "@/components/ui";
 
 interface Vendor {
   id: string;
@@ -19,20 +20,13 @@ interface Quotation {
   version: number;
   isLatest: boolean;
   taxRate: number;
-  rdRate: number;
-  pmRate: number;
-  qcRate: number;
-  integrationRate: number;
+  discount: number;
+  roles: unknown;
   createdAt: string;
   vendor: Vendor;
   categories: {
     id: string;
-    items: {
-      rdDays: any;
-      pmDays: any;
-      qcDays: any;
-      integrationDays: any;
-    }[];
+    items: { days: Record<string, unknown> }[];
   }[];
 }
 
@@ -47,14 +41,15 @@ interface HistoryQuotation {
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const { toast, confirm } = useUI();
   const role = (session?.user as any)?.role;
   const allowEdit = canEdit(role);
+  const allowCreate = canCreate(role);
 
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // 版本歷史相關 State
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
@@ -82,18 +77,14 @@ export default function DashboardPage() {
     fetchQuotations();
   }, []);
 
-  // 清除成功訊息定時器
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => setSuccessMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
-
   const handleDelete = async (id: string, quotationNumber: string) => {
-    if (!window.confirm(`確定要刪除報價單「${quotationNumber}」嗎？此動作將同時刪除所有歷史版本，無法還原！`)) {
-      return;
-    }
+    const ok = await confirm({
+      title: `刪除報價單「${quotationNumber}」？`,
+      message: "此動作將同時刪除所有歷史版本，無法還原。",
+      confirmLabel: "刪除",
+      danger: true,
+    });
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/quotations/${id}`, {
@@ -105,10 +96,55 @@ export default function DashboardPage() {
         throw new Error(data.error || "刪除報價單失敗");
       }
 
-      setSuccessMessage(`已成功刪除報價單「${quotationNumber}」`);
+      toast(`已成功刪除報價單「${quotationNumber}」`);
       fetchQuotations();
     } catch (err: any) {
-      alert(err.message);
+      toast(err.message, "error");
+    }
+  };
+
+  // 狀態轉換動作定義
+  const STATUS_ACTIONS: Record<string, { label: string; target: string; adminOnly: boolean; confirmTitle: string; danger?: boolean }[]> = {
+    DRAFT: [{ label: "寄出", target: "SENT", adminOnly: false, confirmTitle: "標記為已寄出？寄出後內容將鎖定，修改需另存新版本。" }],
+    SENT: [
+      { label: "核准", target: "APPROVED", adminOnly: true, confirmTitle: "核准此報價單？核准後內容將永久鎖定。" },
+      { label: "拒絕", target: "REJECTED", adminOnly: true, confirmTitle: "拒絕此報價單？", danger: true },
+      { label: "撤回", target: "DRAFT", adminOnly: true, confirmTitle: "撤回為草稿？撤回後可再次編輯。" },
+    ],
+  };
+
+  const handleStatusChange = async (q: Quotation, target: string, confirmTitle: string, danger?: boolean) => {
+    const ok = await confirm({
+      title: `${q.quotationNumber}`,
+      message: confirmTitle,
+      confirmLabel: "確認",
+      danger,
+    });
+    if (!ok) return;
+    try {
+      const res = await fetch(`/api/quotations/${q.id}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: target }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "變更狀態失敗");
+      toast(`報價單「${q.quotationNumber}」狀態已更新`);
+      fetchQuotations();
+    } catch (err: any) {
+      toast(err.message, "error");
+    }
+  };
+
+  const handleDuplicate = async (q: Quotation) => {
+    try {
+      const res = await fetch(`/api/quotations/${q.id}/duplicate`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "複製報價單失敗");
+      toast(`已建立複本「${data.quotationNumber}」（草稿）`);
+      fetchQuotations();
+    } catch (err: any) {
+      toast(err.message, "error");
     }
   };
 
@@ -173,11 +209,11 @@ export default function DashboardPage() {
             已寄出
           </span>
         );
-      case "ARCHIVED":
+      case "REJECTED":
         return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-200/50">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-            已封存
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+            已拒絕
           </span>
         );
       case "DRAFT":
@@ -209,16 +245,6 @@ export default function DashboardPage() {
       </div>
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
-
-        {/* 全域成功通知 */}
-        {successMessage && (
-          <div className="fixed bottom-5 right-5 z-50 transform translate-y-0 opacity-100 transition-all duration-300">
-            <div className="bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl flex items-center gap-3 border border-slate-800">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <p className="text-sm font-medium">{successMessage}</p>
-            </div>
-          </div>
-        )}
 
         {/* 搜尋列 */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -297,12 +323,7 @@ export default function DashboardPage() {
                 <tbody>
                   {filteredQuotations.map((q) => {
                     const items = q.categories.flatMap((cat: any) => cat.items);
-                    const summary = calculateQuotation(items, {
-                      rdRate: q.rdRate,
-                      pmRate: q.pmRate,
-                      qcRate: q.qcRate,
-                      integrationRate: q.integrationRate,
-                    }, q.taxRate);
+                    const summary = calculateQuotation(items, parseRoles(q.roles), q.taxRate, q.discount);
                     const isExpanded = expandedIds[q.id];
                     const isHistLoading = historyLoading[q.id];
                     const historyItems = historyMap[q.id] ?? [];
@@ -359,6 +380,34 @@ export default function DashboardPage() {
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex items-center justify-center gap-2">
+                              {/* 狀態流程操作 */}
+                              {(STATUS_ACTIONS[q.status] ?? [])
+                                .filter((a) => (a.adminOnly ? allowEdit : allowCreate))
+                                .map((a) => (
+                                  <button
+                                    key={a.target}
+                                    onClick={() => handleStatusChange(q, a.target, a.confirmTitle, a.danger)}
+                                    className={`inline-flex items-center px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                                      a.danger
+                                        ? "text-rose-600 bg-rose-50 hover:bg-rose-100"
+                                        : a.target === "APPROVED"
+                                          ? "text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
+                                          : "text-blue-700 bg-blue-50 hover:bg-blue-100"
+                                    }`}
+                                    title={a.confirmTitle}
+                                  >
+                                    {a.label}
+                                  </button>
+                                ))}
+                              {allowCreate && (
+                                <button
+                                  onClick={() => handleDuplicate(q)}
+                                  className="inline-flex items-center px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+                                  title="以此單內容建立新草稿"
+                                >
+                                  複製
+                                </button>
+                              )}
                               <Link
                                 href={`/quotations/${q.id}/print`}
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-indigo-650 hover:text-indigo-750 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"

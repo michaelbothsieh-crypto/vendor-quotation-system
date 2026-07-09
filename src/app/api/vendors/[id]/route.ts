@@ -77,6 +77,15 @@ export async function DELETE(
       );
     }
 
+    // 有報價單的廠商不可刪除（保護歷史報價紀錄，DB 層亦設 Restrict）
+    const quotationCount = await db.quotation.count({ where: { vendorId: id } });
+    if (quotationCount > 0) {
+      return NextResponse.json(
+        { error: `該廠商尚有 ${quotationCount} 張報價單，無法刪除。請先刪除相關報價單。` },
+        { status: 400 }
+      );
+    }
+
     await db.vendor.delete({
       where: { id },
     });

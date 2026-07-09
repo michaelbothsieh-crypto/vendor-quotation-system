@@ -1,126 +1,103 @@
 /**
- * 將浮點數精確四捨五入到小數點第一位
+ * 報價計算核心：角色欄位為動態定義（來自範本或報價單快照），
+ * 工時以「乘 10 轉整數」計算，避免 JavaScript 浮點誤差（工時固定一位小數）。
  */
+
+export interface RoleDef {
+  key: string;
+  label: string;
+  rate: number;
+}
+
+export interface ItemInput {
+  days?: Record<string, unknown> | null;
+}
+
+/** 將浮點數精確四捨五入到小數點第一位 */
 export function roundToOneDecimal(num: number): number {
   return Math.round((num + Number.EPSILON) * 10) / 10;
 }
 
-// 支援 Prisma Decimal 轉換與各種可能 input 的 days 解析
-function getDays(val: any): number {
-  if (val === null || val === undefined) return 0;
-  if (typeof val === "object" && typeof val.toNumber === "function") {
-    return val.toNumber();
-  }
+/** 解析各種可能的 days 輸入（字串、數字、null） */
+export function parseDays(val: unknown): number {
+  if (val === null || val === undefined || val === "") return 0;
   const n = Number(val);
-  return isNaN(n) ? 0 : n;
+  return isNaN(n) || n < 0 ? 0 : n;
 }
 
-export interface Rates {
-  rdRate?: number;
-  pmRate?: number;
-  qcRate?: number;
-  integrationRate?: number;
-  DEFAULT_RD_RATE?: number;
-  DEFAULT_PM_RATE?: number;
-  DEFAULT_QC_RATE?: number;
-  DEFAULT_INTEGRATION_RATE?: number;
+/** 工時轉為「十分之一天」整數，計算一律走整數運算 */
+function daysToInt(val: unknown): number {
+  return Math.round(parseDays(val) * 10);
 }
 
-export interface ItemInput {
-  rdDays?: any;
-  pmDays?: any;
-  qcDays?: any;
-  integrationDays?: any;
-}
-
-/**
- * 計算單一功能細項的總工時與未稅金額
- */
-export function calculateItem(item: ItemInput, rates: Rates) {
-  const rdRate = rates.rdRate ?? rates.DEFAULT_RD_RATE ?? 0;
-  const pmRate = rates.pmRate ?? rates.DEFAULT_PM_RATE ?? 0;
-  const qcRate = rates.qcRate ?? rates.DEFAULT_QC_RATE ?? 0;
-  const integrationRate = rates.integrationRate ?? rates.DEFAULT_INTEGRATION_RATE ?? 0;
-
-  const rdDays = getDays(item.rdDays);
-  const pmDays = getDays(item.pmDays);
-  const qcDays = getDays(item.qcDays);
-  const integrationDays = getDays(item.integrationDays);
-
-  // 防範 JavaScript 浮點數計算精度誤差
-  // 做法：將 days 乘以 10 轉換成整數再計算，最後除以 10
-  const rdDaysInt = Math.round(rdDays * 10);
-  const pmDaysInt = Math.round(pmDays * 10);
-  const qcDaysInt = Math.round(qcDays * 10);
-  const integrationDaysInt = Math.round(integrationDays * 10);
-
-  const totalDays = (rdDaysInt + pmDaysInt + qcDaysInt + integrationDaysInt) / 10;
-  
-  // 金額計算
-  const amount = (rdDaysInt * rdRate + pmDaysInt * pmRate + qcDaysInt * qcRate + integrationDaysInt * integrationRate) / 10;
-
+/** 計算單一功能細項的總工時與未稅金額 */
+export function calculateItem(item: ItemInput, roles: RoleDef[]) {
+  let totalDaysInt = 0;
+  let amountTenth = 0;
+  for (const role of roles) {
+    const dInt = daysToInt(item.days?.[role.key]);
+    totalDaysInt += dInt;
+    amountTenth += dInt * role.rate;
+  }
   return {
-    totalDays: roundToOneDecimal(totalDays),
-    amount: Math.round(amount),
+    totalDays: totalDaysInt / 10,
+    amount: Math.round(amountTenth / 10),
   };
 }
 
-/**
- * 計算整張報價單各角色總天數、未稅總額、營業稅與含稅總額
- */
-export function calculateQuotation(items: ItemInput[], rates: Rates, taxRate = 0.05) {
-  let totalRdInt = 0;
-  let totalPmInt = 0;
-  let totalQcInt = 0;
-  let totalIntegrationInt = 0;
+export interface RoleSummary extends RoleDef {
+  totalDays: number;
+  amount: number;
+}
+
+/** 計算整張報價單：各角色總天數/金額、未稅小計、折扣、營業稅與含稅總額 */
+export function calculateQuotation(
+  items: ItemInput[],
+  roles: RoleDef[],
+  taxRate = 0.05,
+  discount = 0
+) {
+  const roleDaysInt: Record<string, number> = {};
   let subtotal = 0;
 
   for (const item of items) {
-    const rdDays = getDays(item.rdDays);
-    const pmDays = getDays(item.pmDays);
-    const qcDays = getDays(item.qcDays);
-    const integrationDays = getDays(item.integrationDays);
-
-    totalRdInt += Math.round(rdDays * 10);
-    totalPmInt += Math.round(pmDays * 10);
-    totalQcInt += Math.round(qcDays * 10);
-    totalIntegrationInt += Math.round(integrationDays * 10);
-
-    const calculated = calculateItem(item, rates);
-    subtotal += calculated.amount;
+    for (const role of roles) {
+      roleDaysInt[role.key] = (roleDaysInt[role.key] ?? 0) + daysToInt(item.days?.[role.key]);
+    }
+    subtotal += calculateItem(item, roles).amount;
   }
 
-  const totalRdDays = totalRdInt / 10;
-  const totalPmDays = totalPmInt / 10;
-  const totalQcDays = totalQcInt / 10;
-  const totalIntegrationDays = totalIntegrationInt / 10;
-  const totalDays = (totalRdInt + totalPmInt + totalQcInt + totalIntegrationInt) / 10;
+  const perRole: RoleSummary[] = roles.map((role) => ({
+    ...role,
+    totalDays: (roleDaysInt[role.key] ?? 0) / 10,
+    amount: Math.round(((roleDaysInt[role.key] ?? 0) * role.rate) / 10),
+  }));
 
-  const rdRate = rates.rdRate ?? rates.DEFAULT_RD_RATE ?? 0;
-  const pmRate = rates.pmRate ?? rates.DEFAULT_PM_RATE ?? 0;
-  const qcRate = rates.qcRate ?? rates.DEFAULT_QC_RATE ?? 0;
-  const integrationRate = rates.integrationRate ?? rates.DEFAULT_INTEGRATION_RATE ?? 0;
-
-  const totalRdAmount = Math.round(totalRdDays * rdRate);
-  const totalPmAmount = Math.round(totalPmDays * pmRate);
-  const totalQcAmount = Math.round(totalQcDays * qcRate);
-  const totalIntegrationAmount = Math.round(totalIntegrationDays * integrationRate);
-
-  const tax = Math.round(subtotal * taxRate);
-  const total = subtotal + tax;
+  const totalDays = Object.values(roleDaysInt).reduce((a, b) => a + b, 0) / 10;
+  const safeDiscount = Math.min(Math.max(Math.round(discount || 0), 0), subtotal);
+  const taxable = subtotal - safeDiscount;
+  const tax = Math.round(taxable * taxRate);
 
   return {
-    totalRdDays: roundToOneDecimal(totalRdDays),
-    totalPmDays: roundToOneDecimal(totalPmDays),
-    totalQcDays: roundToOneDecimal(totalQcDays),
-    totalIntegrationDays: roundToOneDecimal(totalIntegrationDays),
-    totalDays: roundToOneDecimal(totalDays),
-    totalRdAmount,
-    totalPmAmount,
-    totalQcAmount,
-    totalIntegrationAmount,
+    perRole,
+    totalDays,
     subtotal,
+    discount: safeDiscount,
+    taxable,
     tax,
-    total,
+    total: taxable + tax,
   };
+}
+
+/** 從 API 回傳的 Json 欄位安全還原角色定義 */
+export function parseRoles(raw: unknown): RoleDef[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((r): r is Record<string, unknown> => !!r && typeof r === "object")
+    .map((r) => ({
+      key: String(r.key ?? ""),
+      label: String(r.label ?? ""),
+      rate: Math.max(0, Math.round(Number(r.rate) || 0)),
+    }))
+    .filter((r) => r.key !== "");
 }

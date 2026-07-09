@@ -20,18 +20,44 @@ model Vendor {
   updatedAt    DateTime    @updatedAt
 }
 
+// 報價範本：ADMIN 自訂工時角色欄位（名稱/費率/順序）與預設商務條件
+model QuoteTemplate {
+  id           String   @id @default(uuid())
+  name         String
+  isDefault    Boolean  @default(false)
+  roles        Json // [{ key, label, rate }]，順序即陣列順序
+  paymentTerms String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model Quotation {
-  id                String              @id @default(uuid())
-  quotationNumber   String
-  title             String
-  vendorId          String
-  vendor            Vendor              @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  status            String              @default("DRAFT") // 狀態：草稿 (DRAFT), 已寄出 (SENT), 已核准 (APPROVED)
-  taxRate           Float               @default(0.05)
-  rdRate            Int                 @default(8000)
-  pmRate            Int                 @default(6000)
-  qcRate            Int                 @default(5000)
-  integrationRate   Int                 @default(6500)
+  id              String @id @default(uuid())
+  quotationNumber String
+  title           String
+  vendorId        String
+  vendor          Vendor @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+
+  // 廠商快照：儲存當下複製，廠商日後異動/刪除不影響歷史報價單內容
+  vendorName         String  @default("")
+  vendorTaxId        String?
+  vendorContactName  String  @default("")
+  vendorContactEmail String  @default("")
+  vendorContactPhone String?
+  vendorAddress      String?
+
+  status  String @default("DRAFT") // DRAFT | SENT | APPROVED | REJECTED
+  taxRate Float  @default(0.05)
+  roles   Json   @default("[]") // 角色定義與費率快照 [{ key, label, rate }]
+
+  // 商務條件
+  issueDate    DateTime  @default(now())
+  validUntil   DateTime?
+  paymentTerms String?
+  notes        String?
+  discount     Int       @default(0) // 整單折扣額（未稅前扣除）
+
   version           Int                 @default(1)
   isLatest          Boolean             @default(true)
   parentQuotationId String?             @unique
@@ -54,22 +80,13 @@ model QuotationCategory {
 }
 
 model QuotationItem {
-  id              String            @id @default(uuid())
-  categoryId      String
-  category        QuotationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  description     String
-  rdDays          Decimal           @default(0.0) @db.Decimal(10, 1)
-  pmDays          Decimal           @default(0.0) @db.Decimal(10, 1)
-  qcDays          Decimal           @default(0.0) @db.Decimal(10, 1)
-  integrationDays Decimal           @default(0.0) @db.Decimal(10, 1)
-  note            String?
-  sortOrder       Int               @default(0)
-}
-
-model SystemSetting {
-  id    Int    @id @default(autoincrement())
-  key   String @unique
-  value String
+  id          String            @id @default(uuid())
+  categoryId  String
+  category    QuotationCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  description String
+  days        Json              @default("{}") // { [roleKey]: number }，一位小數
+  note        String?
+  sortOrder   Int               @default(0)
 }
 
 model User {
@@ -77,7 +94,7 @@ model User {
   email        String   @unique
   passwordHash String
   name         String
-  role         String   @default("USER") // ADMIN | USER
+  role         String   @default("VIEWER") // ADMIN | EDITOR | VIEWER
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

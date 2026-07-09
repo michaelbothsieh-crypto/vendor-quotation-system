@@ -69,11 +69,11 @@ async function main() {
   await delay(1000);
   await page.screenshot({ path: path.join(outputDir, "vendors.png") });
 
-  // 3. 截圖費率設定頁面
-  console.log("正在截圖費率設定頁面...");
-  await page.goto("http://localhost:3000/settings");
+  // 3. 截圖報價範本管理頁面
+  console.log("正在截圖報價範本管理頁面...");
+  await page.goto("http://localhost:3000/templates");
   await delay(1000);
-  await page.screenshot({ path: path.join(outputDir, "settings.png") });
+  await page.screenshot({ path: path.join(outputDir, "templates.png") });
 
   // 4. 截圖建立報價單頁面
   console.log("正在截圖建立報價單頁面...");
@@ -101,10 +101,20 @@ async function main() {
         quotationNumber: "Q-20260709-TEST",
         title: "測試自動化截圖專案開發案",
         vendorId: demoVendor.id,
-        rdRate: 8000,
-        pmRate: 6000,
-        qcRate: 5000,
-        integrationRate: 6500,
+        vendorName: demoVendor.name,
+        vendorTaxId: demoVendor.taxId,
+        vendorContactName: demoVendor.contactName,
+        vendorContactEmail: demoVendor.contactEmail,
+        vendorContactPhone: demoVendor.contactPhone,
+        vendorAddress: demoVendor.address,
+        roles: [
+          { key: "rd", label: "RD", rate: 8000 },
+          { key: "pm", label: "PM", rate: 6000 },
+          { key: "qc", label: "QC", rate: 5000 },
+          { key: "integration", label: "整合", rate: 6500 },
+        ],
+        paymentTerms: "驗收完成後 30 日內電匯付款",
+        notes: "本報價單有效期限內有效，逾期需重新報價。",
         categories: {
           create: [
             {
@@ -112,8 +122,8 @@ async function main() {
               sortOrder: 0,
               items: {
                 create: [
-                  { description: "Facebook/LINE 登入與資料綁定", rdDays: 1.5, pmDays: 0.5, qcDays: 0.5, integrationDays: 0.5, note: "高優先" },
-                  { description: "後台權限控制角色設定 (RBAC)", rdDays: 2.0, pmDays: 0.5, qcDays: 1.0, integrationDays: 0.5, note: "" },
+                  { description: "Facebook/LINE 登入與資料綁定", days: { rd: 1.5, pm: 0.5, qc: 0.5, integration: 0.5 }, note: "高優先" },
+                  { description: "後台權限控制角色設定 (RBAC)", days: { rd: 2.0, pm: 0.5, qc: 1.0, integration: 0.5 }, note: "" },
                 ],
               },
             },

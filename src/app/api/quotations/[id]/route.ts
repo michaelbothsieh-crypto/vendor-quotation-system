@@ -1,5 +1,14 @@
 import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
+import {
+  jsonRoles,
+  buildVendorSnapshot,
+  normalizeCategoriesPayload,
+  normalizeCommercialPayload,
+  normalizeRolesPayload,
+  PayloadError,
+  QUOTATION_INCLUDE,
+} from "@/lib/quotation";
 
 // 取得特定 ID 的報價單詳細資料，包括廠商、大項與下屬細項，依 sortOrder 排序
 export async function GET(
@@ -10,17 +19,7 @@ export async function GET(
     const { id } = await params;
     const quotation = await db.quotation.findUnique({
       where: { id },
-      include: {
-        vendor: true,
-        categories: {
-          orderBy: { sortOrder: "asc" },
-          include: {
-            items: {
-              orderBy: { sortOrder: "asc" },
-            },
-          },
-        },
-      },
+      include: QUOTATION_INCLUDE,
     });
 
     if (!quotation) {
@@ -39,7 +38,9 @@ export async function GET(
   }
 }
 
-// 更新指定報價單：改為「非原地更新」的版本控制機制，建立新版本並將舊版本設為封存
+// 更新報價單：
+// - DRAFT：原地更新（草稿反覆修改不產生版本噪音）
+// - SENT / APPROVED / REJECTED：建立新版本（回到 DRAFT），舊版保留原狀態作為稽核紀錄
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -47,16 +48,8 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const {
-      title,
-      vendorId,
-      taxRate,
-      rdRate,
-      pmRate,
-      qcRate,
-      integrationRate,
-      categories,
-    } = body;
+    const title = String(body.title ?? "").trim();
+    const vendorId = String(body.vendorId ?? "");
 
     if (!title || !vendorId) {
       return NextResponse.json(
@@ -65,110 +58,70 @@ export async function PUT(
       );
     }
 
-    const parseDays = (val: any) => {
-      if (val === undefined || val === null || val === "") return 0;
-      const parsed = parseFloat(val);
-      return isNaN(parsed) ? 0 : parsed;
-    };
+    const roles = normalizeRolesPayload(body.roles);
+    const categories = normalizeCategoriesPayload(body.categories, roles);
+    const commercial = normalizeCommercialPayload(body);
 
-    // 驗證工時天數
-    if (categories && Array.isArray(categories)) {
-      for (const cat of categories) {
-        if (cat.items && Array.isArray(cat.items)) {
-          for (const item of cat.items) {
-            const rd = parseDays(item.rdDays);
-            const pm = parseDays(item.pmDays);
-            const qc = parseDays(item.qcDays);
-            const integration = parseDays(item.integrationDays);
-
-            if (rd < 0 || pm < 0 || qc < 0 || integration < 0) {
-              return NextResponse.json(
-                { error: "工時天數必須為大於或等於 0 的有效數字" },
-                { status: 400 }
-              );
-            }
-          }
-        }
-      }
+    const vendor = await db.vendor.findUnique({ where: { id: vendorId } });
+    if (!vendor) {
+      return NextResponse.json({ error: "找不到該合作廠商" }, { status: 400 });
     }
 
-    const newQuotation = await db.$transaction(async (tx) => {
-      // 讀取原報價單與其版本號
-      const parent = await tx.quotation.findUnique({
-        where: { id },
-      });
-      if (!parent) {
-        throw new Error("NOT_FOUND");
-      }
-      if (!parent.isLatest) {
-        throw new Error("NOT_LATEST");
+    const result = await db.$transaction(async (tx) => {
+      const parent = await tx.quotation.findUnique({ where: { id } });
+      if (!parent) throw new PayloadError("NOT_FOUND");
+      if (!parent.isLatest) throw new PayloadError("NOT_LATEST");
+
+      const sharedData = {
+        title,
+        vendorId,
+        ...buildVendorSnapshot(vendor),
+        roles: jsonRoles(roles),
+        ...commercial,
+      };
+
+      if (parent.status === "DRAFT") {
+        // 草稿原地更新：重建大項與細項
+        await tx.quotationCategory.deleteMany({ where: { quotationId: id } });
+        return tx.quotation.update({
+          where: { id },
+          data: { ...sharedData, categories: { create: categories } },
+          include: QUOTATION_INCLUDE,
+        });
       }
 
-      // 1. 將父報價單設為非最新版且已封存
+      // 非草稿：另存新版本，舊版保留原狀態（不再覆寫成 ARCHIVED）
       await tx.quotation.update({
         where: { id },
-        data: { isLatest: false, status: "ARCHIVED" }
+        data: { isLatest: false },
       });
-
-      // 2. 建立新一版報價單
-      return await tx.quotation.create({
+      return tx.quotation.create({
         data: {
+          ...sharedData,
           quotationNumber: parent.quotationNumber,
-          title,
-          vendorId,
           status: "DRAFT",
-          taxRate: parseFloat(taxRate ?? parent.taxRate),
-          rdRate: parseInt(rdRate ?? parent.rdRate, 10),
-          pmRate: parseInt(pmRate ?? parent.pmRate, 10),
-          qcRate: parseInt(qcRate ?? parent.qcRate, 10),
-          integrationRate: parseInt(integrationRate ?? parent.integrationRate, 10),
           version: parent.version + 1,
           isLatest: true,
           parentQuotationId: parent.id,
-          categories: {
-            create: (categories ?? []).map((cat: any, catIndex: number) => ({
-              name: cat.name,
-              sortOrder: catIndex,
-              items: {
-                create: (cat.items ?? []).map((item: any, itemIndex: number) => ({
-                  description: item.description || "",
-                  rdDays: parseDays(item.rdDays),
-                  pmDays: parseDays(item.pmDays),
-                  qcDays: parseDays(item.qcDays),
-                  integrationDays: parseDays(item.integrationDays),
-                  note: item.note || "",
-                  sortOrder: itemIndex,
-                })),
-              },
-            })),
-          },
+          categories: { create: categories },
         },
-        include: {
-          categories: {
-            orderBy: { sortOrder: "asc" },
-            include: {
-              items: {
-                orderBy: { sortOrder: "asc" },
-              },
-            },
-          },
-        },
+        include: QUOTATION_INCLUDE,
       });
     });
 
-    return NextResponse.json(newQuotation);
+    return NextResponse.json(result);
   } catch (error: any) {
-    if (error.message === "NOT_FOUND") {
-      return NextResponse.json(
-        { error: "找不到報價單" },
-        { status: 404 }
-      );
-    }
-    if (error.message === "NOT_LATEST") {
-      return NextResponse.json(
-        { error: "無法更新非最新版本的報價單" },
-        { status: 400 }
-      );
+    if (error instanceof PayloadError) {
+      if (error.message === "NOT_FOUND") {
+        return NextResponse.json({ error: "找不到報價單" }, { status: 404 });
+      }
+      if (error.message === "NOT_LATEST") {
+        return NextResponse.json(
+          { error: "無法更新非最新版本的報價單" },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
     return NextResponse.json(
       { error: `更新報價單失敗：${error.message}` },
@@ -177,15 +130,22 @@ export async function PUT(
   }
 }
 
-// 刪除指定報價單（Prisma 自動級聯刪除 categories 與 items）
+// 刪除報價單：連同同單號的所有歷史版本一併刪除（避免最新版刪除後歷史版本變孤兒）
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    await db.quotation.delete({
+    const quotation = await db.quotation.findUnique({
       where: { id },
+      select: { quotationNumber: true },
+    });
+    if (!quotation) {
+      return NextResponse.json({ error: "找不到報價單" }, { status: 404 });
+    }
+    await db.quotation.deleteMany({
+      where: { quotationNumber: quotation.quotationNumber },
     });
     return NextResponse.json({ success: true });
   } catch (error: any) {

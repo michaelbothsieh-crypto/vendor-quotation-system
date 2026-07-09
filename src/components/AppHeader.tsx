@@ -39,12 +39,14 @@ export default function AppHeader() {
           >
             廠商管理
           </Link>
-          <Link
-            href="/settings"
-            className="inline-flex justify-center items-center rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
-          >
-            費率設定
-          </Link>
+          {admin && (
+            <Link
+              href="/templates"
+              className="inline-flex justify-center items-center rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
+            >
+              報價範本
+            </Link>
+          )}
           <Link
             href="/database"
             className="inline-flex justify-center items-center rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-slate-500 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"

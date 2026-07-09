@@ -35,8 +35,8 @@ export function canEdit(role: string | null | undefined): boolean {
 
 /** 建立新資料需 EDITOR 以上，異動/刪除需 ADMIN。 */
 const CREATABLE_API_PREFIXES = ["/api/vendors", "/api/quotations"];
-/** 沒有「新增」概念、寫入即視為異動全域設定，一律限 ADMIN。 */
-const ADMIN_ONLY_WRITE_API_PREFIXES = ["/api/settings"];
+/** 範本為全域設定，寫入一律限 ADMIN。 */
+const ADMIN_ONLY_WRITE_API_PREFIXES = ["/api/templates"];
 
 export function checkApiPermission(
   pathname: string,
@@ -46,7 +46,7 @@ export function checkApiPermission(
   if (method === "GET" || method === "HEAD") return { allowed: true };
 
   if (ADMIN_ONLY_WRITE_API_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return canEdit(role) ? { allowed: true } : { allowed: false, error: "權限不足：僅管理員可異動系統設定" };
+    return isAdmin(role) ? { allowed: true } : { allowed: false, error: "權限不足：僅管理員可異動報價範本" };
   }
 
   const isCreatable = CREATABLE_API_PREFIXES.some((p) => pathname.startsWith(p));
@@ -55,6 +55,10 @@ export function checkApiPermission(
   if (method === "POST") {
     return canCreate(role) ? { allowed: true } : { allowed: false, error: "權限不足：僅檢視者無法新增" };
   }
-  // PUT / PATCH / DELETE 等異動操作
+  // 狀態轉換（PATCH）開放 EDITOR 以上，細部轉換權限（核准/拒絕限 ADMIN）由 route 內驗證
+  if (method === "PATCH" && pathname.startsWith("/api/quotations")) {
+    return canCreate(role) ? { allowed: true } : { allowed: false, error: "權限不足：檢視者無法變更狀態" };
+  }
+  // PUT / DELETE 等異動操作
   return canEdit(role) ? { allowed: true } : { allowed: false, error: "權限不足：僅管理員可異動或刪除" };
 }

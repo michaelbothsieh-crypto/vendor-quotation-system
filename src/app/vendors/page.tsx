@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { canCreate, canEdit } from "@/lib/permissions";
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard";
+import { useUI } from "@/components/ui";
 
 const EMPTY_VENDOR_FORM = { name: "", taxId: "", contactName: "", contactEmail: "", contactPhone: "", address: "" };
 
@@ -31,6 +32,7 @@ interface Vendor {
 
 export default function VendorsPage() {
   const { data: session } = useSession();
+  const { toast, confirm } = useUI();
   const role = (session?.user as any)?.role;
   const allowEdit = canEdit(role);
   const allowCreate = canCreate(role);
@@ -125,15 +127,15 @@ export default function VendorsPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // 刪除廠商
+  // 刪除廠商（後端會擋下仍有報價單的廠商，保護歷史報價紀錄）
   const handleDelete = async (id: string, vendorName: string) => {
-    if (
-      !window.confirm(
-        `確定要刪除「${vendorName}」嗎？此動作將連同該廠商的報價單一併刪除，且無法還原！`
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: `刪除廠商「${vendorName}」？`,
+      message: "僅能刪除沒有任何報價單的廠商，此動作無法還原。",
+      confirmLabel: "刪除",
+      danger: true,
+    });
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/vendors/${id}`, {
@@ -152,19 +154,19 @@ export default function VendorsPage() {
       }
       fetchVendors();
     } catch (err: any) {
-      alert(err.message);
+      toast(err.message, "error");
     }
   };
 
   // 刪除報價單
   const handleDeleteQuotation = async (id: string, quotationNumber: string) => {
-    if (
-      !window.confirm(
-        `確定要刪除報價單「${quotationNumber}」嗎？此動作將無法還原！`
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: `刪除報價單「${quotationNumber}」？`,
+      message: "此動作將同時刪除所有歷史版本，無法還原。",
+      confirmLabel: "刪除",
+      danger: true,
+    });
+    if (!ok) return;
 
     try {
       const res = await fetch(`/api/quotations/${id}`, {
@@ -179,7 +181,7 @@ export default function VendorsPage() {
       setSuccessMessage(`已成功刪除報價單「${quotationNumber}」`);
       fetchVendors();
     } catch (err: any) {
-      alert(err.message);
+      toast(err.message, "error");
     }
   };
 
