@@ -58,7 +58,6 @@ export default function DashboardPage() {
 
   const fetchQuotations = async () => {
     try {
-      setIsLoading(true);
       const res = await fetch("/api/quotations");
       if (!res.ok) {
         throw new Error("無法取得報價單列表資料");

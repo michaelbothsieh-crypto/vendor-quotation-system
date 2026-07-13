@@ -45,7 +45,6 @@ export default function TemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      setIsLoading(true);
       const res = await fetch("/api/templates");
       if (!res.ok) throw new Error("無法取得範本列表");
       setTemplates(await res.json());

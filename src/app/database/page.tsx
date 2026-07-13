@@ -32,7 +32,6 @@ export default function DatabasePage() {
 
   const fetchData = async () => {
     try {
-      setIsLoading(true);
       setError(null);
       const res = await fetch("/api/admin/database", { cache: "no-store" });
       if (!res.ok) throw new Error("無法取得資料庫資料");

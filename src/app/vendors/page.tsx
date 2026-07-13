@@ -65,7 +65,6 @@ export default function VendorsPage() {
   // 載入廠商列表
   const fetchVendors = async () => {
     try {
-      setIsLoading(true);
       const res = await fetch("/api/vendors");
       if (!res.ok) {
         throw new Error("無法取得廠商列表資料");

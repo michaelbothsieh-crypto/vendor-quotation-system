@@ -41,7 +41,6 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-      setIsLoading(true);
       const res = await fetch("/api/users");
       if (!res.ok) {
         const data = await res.json().catch(() => null);
