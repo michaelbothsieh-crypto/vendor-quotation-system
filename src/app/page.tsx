@@ -104,7 +104,7 @@ export default function DashboardPage() {
 
   // 狀態轉換動作定義
   const STATUS_ACTIONS: Record<string, { label: string; target: string; adminOnly: boolean; confirmTitle: string; danger?: boolean }[]> = {
-    DRAFT: [{ label: "寄出", target: "SENT", adminOnly: false, confirmTitle: "標記為已寄出？寄出後內容將鎖定，修改需另存新版本。" }],
+    DRAFT: [{ label: "送核", target: "SENT", adminOnly: false, confirmTitle: "送出待核？送核後內容將鎖定，修改需另存新版本。" }],
     SENT: [
       { label: "核准", target: "APPROVED", adminOnly: true, confirmTitle: "核准此報價單？核准後內容將永久鎖定。" },
       { label: "拒絕", target: "REJECTED", adminOnly: true, confirmTitle: "拒絕此報價單？", danger: true },
@@ -205,7 +205,7 @@ export default function DashboardPage() {
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-200/50">
             <span className="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
-            已寄出
+            待核
           </span>
         );
       case "REJECTED":

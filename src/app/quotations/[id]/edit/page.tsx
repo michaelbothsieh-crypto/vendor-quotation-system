@@ -9,7 +9,7 @@ interface EditQuotationPageProps {
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  SENT: "已寄出",
+  SENT: "待核",
   APPROVED: "已核准",
   REJECTED: "已拒絕",
 };

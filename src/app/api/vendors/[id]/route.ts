@@ -10,9 +10,9 @@ export async function PUT(
     const body = await req.json();
     const { name, taxId, contactName, contactEmail, contactPhone, address } = body;
 
-    if (!name || !contactName || !contactEmail) {
+    if (!name) {
       return NextResponse.json(
-        { error: "名稱、聯絡人與聯絡信箱為必填欄位" },
+        { error: "名稱為必填欄位" },
         { status: 400 }
       );
     }
@@ -41,8 +41,8 @@ export async function PUT(
       data: {
         name,
         taxId: taxId || null,
-        contactName,
-        contactEmail,
+        contactName: contactName || "",
+        contactEmail: contactEmail || "",
         contactPhone: contactPhone || null,
         address: address || null,
       },

@@ -191,8 +191,8 @@ export default function VendorsPage() {
     setSubmitError(null);
 
     // 基本驗證
-    if (!name.trim() || !contactName.trim() || !contactEmail.trim()) {
-      setSubmitError("廠商名稱、聯絡人與聯絡信箱為必填欄位");
+    if (!name.trim()) {
+      setSubmitError("廠商名稱為必填欄位");
       setIsSubmitting(false);
       return;
     }
@@ -595,12 +595,11 @@ export default function VendorsPage() {
                 {/* 聯絡人姓名 */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5">
-                    聯絡人姓名 <span className="text-rose-500">*</span>
+                    聯絡人姓名
                   </label>
                   <input
                     type="text"
-                    required
-                    placeholder="例如：林專員、張經理"
+                    placeholder="例如：林專員、張經理 (選填)"
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 placeholder-slate-400 text-sm transition-all focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10"
@@ -610,12 +609,11 @@ export default function VendorsPage() {
                 {/* 聯絡信箱 */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1.5">
-                    聯絡信箱 (Email) <span className="text-rose-500">*</span>
+                    聯絡信箱 (Email)
                   </label>
                   <input
                     type="email"
-                    required
-                    placeholder="請輸入聯絡人電子郵件"
+                    placeholder="請輸入聯絡人電子郵件 (選填)"
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-800 placeholder-slate-400 text-sm transition-all focus:border-indigo-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10"

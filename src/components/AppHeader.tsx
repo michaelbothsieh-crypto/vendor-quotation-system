@@ -41,6 +41,14 @@ export default function AppHeader() {
           </Link>
           {admin && (
             <Link
+              href="/revenue"
+              className="inline-flex justify-center items-center rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
+            >
+              收益總覽
+            </Link>
+          )}
+          {admin && (
+            <Link
               href="/templates"
               className="inline-flex justify-center items-center rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 active:scale-[0.98] transition-all"
             >

@@ -80,16 +80,6 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
   // 用於表格序號
   let itemIndexCounter = 0;
 
-  // 我方抬頭資料 (一般系統設定或寫死作為預設)
-  const ourCompany = {
-    name: "安迪葛拉維科技股份有限公司",
-    taxId: "88888888",
-    contact: "專案開發處 報價組",
-    phone: "02-2345-6789",
-    email: "billing@antigravity.tw",
-    address: "台北市信義區信義路五段 7 號",
-  };
-
   const taxPercent = Math.round(quotation.taxRate * 100);
   const formatDate = (value: string | null | undefined) =>
     value ? new Date(value).toLocaleDateString("zh-TW") : null;
@@ -134,35 +124,15 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
       <main className="max-w-4xl mx-auto bg-white p-12 border border-slate-200 shadow-lg rounded-3xl print:border-none print:shadow-none print:p-0 print:rounded-none">
 
         {/* 頁首標題 */}
-        <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">專案開發服務報價單</h1>
-            <p className="text-xs text-slate-400 mt-2 font-mono uppercase tracking-wider">
-              Project Development Service Quotation
-            </p>
-          </div>
-          <div className="text-left md:text-right font-mono text-sm space-y-1">
-            <p className="text-slate-500">
-              <span className="font-semibold text-slate-700">報價單號：</span>
-              <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-950 font-bold border border-slate-200/50 print:border-none print:bg-transparent print:p-0">
-                {quotation.quotationNumber}
-              </span>
-            </p>
-            <p className="text-slate-500">
-              <span className="font-semibold text-slate-700">報價日期：</span>
-              {formatDate(quotation.issueDate) ?? formatDate(quotation.createdAt)}
-            </p>
-            {quotation.validUntil && (
-              <p className="text-slate-500">
-                <span className="font-semibold text-slate-700">有效期限：</span>
-                {formatDate(quotation.validUntil)}
-              </p>
-            )}
-          </div>
+        <div className="border-b-2 border-slate-900 pb-6 mb-8">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">系統功能開發暨技術服務報價單</h1>
+          <p className="text-xs text-slate-400 mt-2 font-mono uppercase tracking-wider">
+            Service Quotation for System Feature Development
+          </p>
         </div>
 
-        {/* 雙方資訊欄位 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {/* 客戶抬頭與報價資訊欄位 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 print:grid-cols-2 print:gap-4">
           {/* 客戶抬頭資料 */}
           <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 print:bg-transparent print:p-0 print:border-none">
             <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">客戶抬頭</h2>
@@ -197,31 +167,26 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
             </div>
           </div>
 
-          {/* 我方抬頭資料 */}
+          {/* 報價單資訊 */}
           <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 print:bg-transparent print:p-0 print:border-none">
-            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">我方抬頭</h2>
-            <div className="space-y-2 text-sm text-slate-800">
-              <p className="text-base font-bold text-slate-950">{ourCompany.name}</p>
-              <p>
-                <span className="text-slate-400 font-medium">統一編號：</span>
-                {ourCompany.taxId}
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">報價資訊</h2>
+            <div className="space-y-2 text-sm font-mono">
+              <p className="text-slate-500">
+                <span className="font-semibold text-slate-700 font-sans">報價單號：</span>
+                <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-950 font-bold border border-slate-200/50 print:border-none print:bg-transparent print:p-0">
+                  {quotation.quotationNumber}
+                </span>
               </p>
-              <p>
-                <span className="text-slate-400 font-medium">經辦窗口：</span>
-                {ourCompany.contact}
+              <p className="text-slate-500">
+                <span className="font-semibold text-slate-700 font-sans">報價日期：</span>
+                {formatDate(quotation.issueDate) ?? formatDate(quotation.createdAt)}
               </p>
-              <p>
-                <span className="text-slate-400 font-medium">聯絡信箱：</span>
-                <span className="font-mono">{ourCompany.email}</span>
-              </p>
-              <p>
-                <span className="text-slate-400 font-medium">聯絡電話：</span>
-                {ourCompany.phone}
-              </p>
-              <p>
-                <span className="text-slate-400 font-medium">聯絡地址：</span>
-                {ourCompany.address}
-              </p>
+              {quotation.validUntil && (
+                <p className="text-slate-500">
+                  <span className="font-semibold text-slate-700 font-sans">有效期限：</span>
+                  {formatDate(quotation.validUntil)}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -240,50 +205,87 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
           <div className="overflow-x-auto print:overflow-visible">
             <table className="w-full text-left text-sm border-collapse">
               <thead>
-                <tr className="bg-slate-100 text-slate-700 border-b border-slate-300">
+                <tr className="bg-slate-100 text-slate-700 border-b-2 border-slate-300">
                   <th className="py-2.5 px-3 font-semibold text-center w-12">項次</th>
                   <th className="py-2.5 px-3 font-semibold">功能項目與描述</th>
                   {roles.map((role: any) => (
-                    <th key={role.key} className="py-2.5 px-3 font-semibold text-right w-16">
-                      {role.label} (天)
+                    <th key={role.key} className="py-2.5 px-2 font-semibold text-right w-16 whitespace-nowrap">
+                      {role.label}
+                      <span className="block text-[10px] font-normal text-slate-400">(天)</span>
                     </th>
                   ))}
-                  <th className="py-2.5 px-3 font-semibold text-right w-24">小計金額</th>
-                  <th className="py-2.5 px-3 font-semibold max-w-[120px]">備註</th>
+                  <th className="py-2.5 px-3 font-semibold text-right w-28 whitespace-nowrap">小計金額</th>
+                  <th className="py-2.5 px-3 font-semibold w-[25%]">備註</th>
                 </tr>
               </thead>
               <tbody>
-                {quotation.categories.map((cat: any) => (
-                  <Fragment key={cat.id}>
-                    <tr className="border-b border-slate-200">
-                      <td colSpan={roles.length + 4} className="py-2 px-3 bg-indigo-50/50 font-bold text-indigo-900 print:bg-slate-100">
-                        大項：{cat.name}
-                      </td>
-                    </tr>
-                    {cat.items.map((item: any) => {
-                      itemIndexCounter++;
-                      const calculatedItem = calculateItem(item, roles);
-                      return (
-                        <tr key={item.id} className="border-b border-slate-100 hover:bg-slate-50/50">
-                          <td className="py-2 px-3 text-slate-500 text-center font-mono text-xs">{itemIndexCounter}</td>
-                          <td className="py-2 px-3 text-slate-900 font-medium">{item.description}</td>
-                          {roles.map((role: any) => (
-                            <td key={role.key} className="py-2 px-3 text-slate-700 text-right font-mono">
-                              {Number(item.days?.[role.key]) || 0}
+                {quotation.categories.map((cat: any) => {
+                  const catSubtotal = cat.items.reduce(
+                    (sum: number, item: any) => sum + calculateItem(item, roles).amount,
+                    0
+                  );
+                  return (
+                    <Fragment key={cat.id}>
+                      <tr className="border-b border-slate-200 print:break-inside-avoid">
+                        <td colSpan={roles.length + 4} className="py-2 px-3 bg-indigo-50/50 font-bold text-indigo-900 print:bg-slate-100">
+                          大項：{cat.name}
+                        </td>
+                      </tr>
+                      {cat.items.map((item: any) => {
+                        itemIndexCounter++;
+                        const calculatedItem = calculateItem(item, roles);
+                        return (
+                          <tr
+                            key={item.id}
+                            className="border-b border-slate-100 odd:bg-slate-50/40 hover:bg-slate-50/70 print:break-inside-avoid"
+                          >
+                            <td className="py-2 px-3 text-slate-500 text-center font-mono text-xs align-top">{itemIndexCounter}</td>
+                            <td className="py-2 px-3 text-slate-900 font-medium align-top whitespace-pre-line">{item.description}</td>
+                            {roles.map((role: any) => {
+                              const days = Number(item.days?.[role.key]) || 0;
+                              return (
+                                <td key={role.key} className="py-2 px-2 text-right font-mono align-top">
+                                  {days ? (
+                                    <span className="text-slate-700">{days}</span>
+                                  ) : (
+                                    <span className="text-slate-300">-</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                            <td className="py-2 px-3 text-slate-900 text-right font-mono font-semibold whitespace-nowrap align-top">
+                              ${calculatedItem.amount.toLocaleString()}
                             </td>
-                          ))}
-                          <td className="py-2 px-3 text-slate-900 text-right font-mono font-semibold">
-                            ${calculatedItem.amount.toLocaleString()}
-                          </td>
-                          <td className="py-2 px-3 text-slate-500 text-xs truncate max-w-[120px]" title={item.note || ""}>
-                            {item.note || "-"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </Fragment>
-                ))}
+                            <td className="py-2 px-3 text-slate-500 text-xs align-top whitespace-pre-wrap break-words">
+                              {item.note || "-"}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      <tr className="border-b border-slate-200 print:break-inside-avoid">
+                        <td colSpan={roles.length + 2} className="py-1.5 px-3 text-right text-xs text-slate-500">
+                          「{cat.name}」小計
+                        </td>
+                        <td className="py-1.5 px-3 text-right font-mono text-xs font-semibold text-indigo-800 whitespace-nowrap">
+                          ${catSubtotal.toLocaleString()}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </Fragment>
+                  );
+                })}
               </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-300 bg-slate-50 print:break-inside-avoid">
+                  <td colSpan={roles.length + 2} className="py-2.5 px-3 text-right font-bold text-slate-900">
+                    未稅金額合計
+                  </td>
+                  <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-950 whitespace-nowrap">
+                    ${summary.subtotal.toLocaleString()}
+                  </td>
+                  <td></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>
@@ -360,35 +362,6 @@ export default function PrintQuotationPage({ params }: PrintPageProps) {
             )}
           </div>
         )}
-
-        {/* 雙方簽章區 */}
-        <div className="mt-16 pt-8 border-t border-slate-200">
-          <div className="grid grid-cols-2 gap-12 print:gap-8">
-            <div className="flex flex-col gap-12">
-              <div>
-                <p className="text-sm font-bold text-slate-900">客戶簽認 (委託方)：</p>
-                <p className="text-xs text-slate-400 mt-1">{client.name}</p>
-              </div>
-              <div className="border-b border-slate-450 h-8 w-full max-w-[280px]"></div>
-              <div className="text-xs text-slate-500 space-y-1 font-mono">
-                <p>簽名蓋章：_________________________</p>
-                <p>簽署日期：20___ 年 ___ 月 ___ 日</p>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-12">
-              <div>
-                <p className="text-sm font-bold text-slate-900">我方簽認 (受託方)：</p>
-                <p className="text-xs text-slate-400 mt-1">{ourCompany.name}</p>
-              </div>
-              <div className="border-b border-slate-450 h-8 w-full max-w-[280px]"></div>
-              <div className="text-xs text-slate-500 space-y-1 font-mono">
-                <p>經辦人：___________________________</p>
-                <p>核准日期：20___ 年 ___ 月 ___ 日</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
       </main>
     </div>

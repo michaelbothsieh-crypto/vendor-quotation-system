@@ -26,7 +26,7 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       title={isDark ? "切換為亮色模式" : "切換為深色模式"}
-      className="fixed bottom-4 left-4 z-[100] flex items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-500 dark:bg-amber-400 dark:hover:bg-amber-300 pl-3 pr-4 py-2.5 shadow-xl ring-2 ring-white/40 dark:ring-black/20 text-white dark:text-slate-900 font-semibold text-sm hover:scale-105 active:scale-95 transition-all"
+      className="no-print fixed bottom-4 left-4 z-[100] flex items-center gap-2 rounded-full bg-indigo-600 hover:bg-indigo-500 dark:bg-amber-400 dark:hover:bg-amber-300 pl-3 pr-4 py-2.5 shadow-xl ring-2 ring-white/40 dark:ring-black/20 text-white dark:text-slate-900 font-semibold text-sm hover:scale-105 active:scale-95 transition-all"
     >
       {isDark ? (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

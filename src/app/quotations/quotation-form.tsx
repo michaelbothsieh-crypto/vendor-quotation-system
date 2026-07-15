@@ -46,6 +46,13 @@ const inputClass =
 const smallInputClass =
   "w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs focus:border-indigo-500 focus:outline-none disabled:opacity-60";
 
+/** 讓多行 textarea 依內容自動長高（掛在 ref 與 onChange 上） */
+const autoGrow = (el: HTMLTextAreaElement | null) => {
+  if (!el) return;
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight}px`;
+};
+
 /** 天數輸入限制：非負、最多一位小數（對齊 DB Decimal 與計算精度） */
 const DAYS_PATTERN = /^\d*(\.\d?)?$/;
 
@@ -685,13 +692,17 @@ export default function QuotationForm({ id, initialData, readOnly = false, readO
                             </td>
                           )}
                           <td className="px-4 py-3">
-                            <input
-                              type="text"
+                            <textarea
                               required
-                              placeholder="如：使用者登入與 API 對接"
+                              rows={1}
+                              placeholder="如：使用者登入與 API 對接（可多行）"
                               value={item.description}
-                              onChange={(e) => updateItemField(catIndex, itemIndex, "description", e.target.value)}
-                              className={smallInputClass}
+                              ref={autoGrow}
+                              onChange={(e) => {
+                                updateItemField(catIndex, itemIndex, "description", e.target.value);
+                                autoGrow(e.currentTarget);
+                              }}
+                              className={`${smallInputClass} resize-none overflow-hidden leading-snug`}
                             />
                           </td>
                           {roles.map((role) => (
@@ -755,13 +766,17 @@ export default function QuotationForm({ id, initialData, readOnly = false, readO
                           </div>
                         )}
                       </div>
-                      <input
-                        type="text"
+                      <textarea
                         required
-                        placeholder="功能細項描述"
+                        rows={1}
+                        placeholder="功能細項描述（可多行）"
                         value={item.description}
-                        onChange={(e) => updateItemField(catIndex, itemIndex, "description", e.target.value)}
-                        className={smallInputClass}
+                        ref={autoGrow}
+                        onChange={(e) => {
+                          updateItemField(catIndex, itemIndex, "description", e.target.value);
+                          autoGrow(e.currentTarget);
+                        }}
+                        className={`${smallInputClass} resize-none overflow-hidden leading-snug`}
                       />
                       <div className="grid grid-cols-2 gap-2">
                         {roles.map((role) => (
