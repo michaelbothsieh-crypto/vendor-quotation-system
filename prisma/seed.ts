@@ -1,8 +1,14 @@
+import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'node:crypto';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error('DATABASE_URL is required');
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString }),
+});
 
 // 預設範本的角色欄位（key 固定，供示範報價單引用）
 const DEFAULT_ROLES = [
@@ -141,3 +147,4 @@ main()
     await prisma.$disconnect();
     process.exit(1);
   });
+

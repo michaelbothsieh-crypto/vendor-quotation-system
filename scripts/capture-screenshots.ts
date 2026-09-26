@@ -1,9 +1,15 @@
+import { PrismaPg } from "@prisma/adapter-pg";
 import { chromium } from "playwright";
 import { PrismaClient } from "@prisma/client";
 import * as fs from "fs";
 import * as path from "path";
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error("DATABASE_URL is required");
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString }),
+});
 
 async function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -148,3 +154,4 @@ main().catch(async (e) => {
   await prisma.$disconnect();
   process.exit(1);
 });
+
